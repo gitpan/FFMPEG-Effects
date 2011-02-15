@@ -1,7 +1,7 @@
-# package FFMPEG::Effects;
+package FFMPEG::Effects;
 
 use warnings;
-use strict;
+# use strict;
 use MIME::Base64 ();
 
 
@@ -12,11 +12,11 @@ FFMPEG::Effects - PERL Routines To Generate Titles And Fades
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 
 # Set Initial Useful Values For Necessary Variables Not Passed In.
@@ -71,9 +71,14 @@ print("\n");
 
 =head1 SYNOPSIS
 
-   use FFMPEG::Effects;
+use FFMPEG::Effects;
 
-      my @infade=FadeIn('vidfile="short.mpg"', 'size="cif"', 'framerate=30', 'color="cyan"', 'opacity=70', 'fadeinframes=90', 'fadeoutframes=56', 'holdframes=31', 'titleframes=91' );
+package FFMPEG::Effects;
+
+## This Module Uses eval(), So Include It Via "package", Or Fully Qualify Each Function Call As In First Example.
+
+
+      my @infade=FFMPEG::Effects::FadeIn('vidfile="short.mpg"', 'size="cif"', 'framerate=30', 'color="cyan"', 'opacity=70', 'fadeinframes=90', 'fadeoutframes=56', 'holdframes=31', 'titleframes=91' );
 
       my @title=TitleFade('size="cif"', 'framerate=30', 'color="white"', 'opacity=100', 'fadeinframes=45', 'fadeoutframes=60', 'holdframes=45', 'titleframes=599' );
 
@@ -443,7 +448,7 @@ return(@StreamInfo);
 
 =cut
 
-sub TitleFade  
+sub TitleFade 
 {
 print("value of \@_ sent to OpeningTitle: @_\n");
 
@@ -984,5 +989,4 @@ See http://dev.perl.org/licenses/ for more information.
 
 
 =cut
-
 1; # End of FFMPEG::Effects

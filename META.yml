@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               FFMPEG-Effects
-version:            0.01
+version:            0.02
 abstract:           PERL Routines To Generate Titles And Fades
 author:
     - Piero Bugoni <PBugoni@cpan.org>
