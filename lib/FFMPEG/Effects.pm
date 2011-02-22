@@ -8,15 +8,15 @@ use MIME::Base64 ();
 
 =head1 NAME
 
-FFMPEG::Effects - PERL Routines To Generate Titles And Fades
+FFMPEG::Effects - PERL Routines To Generate Titles And Fades With libavfilter
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 
 # Set Initial Useful Values For Necessary Variables Not Passed In.
@@ -75,7 +75,7 @@ use FFMPEG::Effects;
 
 package FFMPEG::Effects;
 
-## This Module Uses eval(), So Include It Via "package", Or Fully Qualify Each Function Call As In First Example.
+## This Module Uses eval(), So Include It Via "package" Also, Or Fully Qualify Each Function Call As In First Example.
 
 
       my @infade=FFMPEG::Effects::FadeIn('vidfile="short.mpg"', 'size="cif"', 'framerate=30', 'color="cyan"', 'opacity=70', 'fadeinframes=90', 'fadeoutframes=56', 'holdframes=31', 'titleframes=91' );
@@ -85,13 +85,28 @@ package FFMPEG::Effects;
       my @outfade=FadeOut('vidfile="short.mpg"', 'size="cif"', 'framerate=30', 'color="cyan"', 'opacity=70', 'fadeinframes=90', 'fadeoutframes=56', 'holdframes=31', 'titleframes=91' );
 
 
+
+
+=head1 USAGE
+
+Use This Module As In The Examples Above, Sending An Array Of Quoted Strings
+To Each Function. Enclose String Values For Parameters In Double Quotes, 
+Inside Single-Quoted Expressions.
+
+=head1 DEPENDENCIES
+
+This Module Uses FFMPEG With The libavformat Source Modified
+To Include The "movie" Filter From The SOC Development.
+See The Readme For More Info.
+
+
 =head1 EXPORT
 
 -- TBD
 
 =head1 SUBROUTINES/METHODS
 
-=head2 SetParams Set Necessary Parameters To Operate
+=head2 SetParams()  Set Necessary Parameters To Operate.
 
 =cut
 
@@ -161,7 +176,7 @@ return(@Params);
 }
 
 
-=head2 FadeIn Fade In From Solid Or Transparent Color To Scene
+=head2 FadeIn()  Fade In From Solid Or Transparent Color To Scene.
 
 =cut
 
@@ -250,7 +265,7 @@ return @ProcDataArray;
 }
 
 
-=head2 FadeOut  Fade Out From Video To Solid Or Transparent Color
+=head2 FadeOut()  Fade Out From Scene To Solid Or Transparent Color.
 
 =cut
 
@@ -348,7 +363,7 @@ return @ProcDataArray;
 }
 
 
-=head2 Transition Between Scenes. TBD
+=head2 Transition()  Transition Between Scenes. TBD
 
 =cut
 
@@ -357,7 +372,7 @@ sub Transition
 }
 
 
-=head2 GetDuration Get Duration Seconds Of Video
+=head2 GetDuration()  Get Duration Seconds Of Video.
 
 =cut
 
@@ -396,7 +411,7 @@ return($DurationSecs);
 ### End GetDuration
 
 
-=head2 GetStreamInfo Get Various Stream Parameters
+=head2 GetStreamInfo()  Get Various Stream Parameters.
 
 =cut
 
@@ -444,7 +459,7 @@ return(@StreamInfo);
 }
 
 
-=head2 TitleFade Generate A Title From PostScript With Fade In And Out
+=head2 TitleFade()  Generate A Title From PostScript With Fade In And Out.
 
 =cut
 
@@ -453,7 +468,7 @@ sub TitleFade
 print("value of \@_ sent to OpeningTitle: @_\n");
 
 # my @testit=SetParams(@_);
-# print("Return of \@Params from SetParams() = @testit\n");
+# print("Return of \@Params from SetParams() In TitleFade = @testit\n");
 SetParams(@_);
 
 Clear1024x7681Frame();
@@ -498,9 +513,6 @@ print("nextval: $next\n");
 
 Clear1024x7681Frame();
 
-# $ProcData=`ffmpeg -y -qmin 1 -qmax 1 -g 0 -vframes 1 -i clear-1fr-1024x768.mpg -r $framerate -vf "color=$color\@$fade:$size [layer1]; [in][layer1] overlay=0:0" -s $size -qmin 1 -qmax 1 -g 0 color-0.mpg `;
-
-
 	for ( $frameno = 1; $frameno <= $titleframes; $frameno++)
 	{
 		system("cat color-0.mpg >> $vidfile-titlebackground.mpg"); 
@@ -522,8 +534,7 @@ return @ProcDataArray;
 }
 
 
-
-=head2 Clear1024x7681Frame Base64 Encoded 1024x768 MPG 1 Frame
+=head2 Clear1024x7681Frame()  Returns Base64 Encoded 1024x768 MPG 1 Frame.
 
 =cut
 
@@ -749,7 +760,7 @@ lKRFylKRFylKRFylKRFylKRFylKRFylKRFylKSlcpSk4uRhGRKnAAAABvgIuD///////////////
 DATA
 
 
-# my $returndata=uudecode($sampledata);
+# my $returndata=uudecode($clearframe);
 my $returndata=MIME::Base64::decode($clearframe);
 
 open (OUTFILE,  '>', "color-0.mpg") or  die $!;
@@ -760,7 +771,7 @@ return($returndata);
 }
 
 
-=head2 PSTitleFrame -- Title Frame Template In PostScript
+=head2 PSTitleFrame() Returns PostScript Title Frame Template.
 
 =cut
 

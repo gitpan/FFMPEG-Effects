@@ -2,6 +2,7 @@
 
 # use strict;
 use FFMPEG::Effects;
+package FFMPEG::Effects;
 
 
 my @title=TitleFade('size="cif"', 'framerate=30', 'color="black"', 'opacity=100', 'fadeinframes=50', 'fadeoutframes=50', 'holdframes=30', 'titleframes=299' );

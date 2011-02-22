@@ -1,0 +1,18 @@
+
+Built Against:
+FFMPEG-HEAD-665132e.tgz
+
+With:
+./configure --enable-shared --enable-gpl --enable-version3 --enable-nonfree   --enable-x11grab --enable-runtime-cpudetect --enable-libdc1394  --enable-libfaac --enable-libmp3lame   --enable-libtheora --enable-libvorbis --enable-libx264 --enable-libxvid
+
+
+These Files:
+libavformat/Makefile
+and 
+libformat/allfilters.c
+
+Were Modified to inlude the "vsrc_movie" filter
+
+
+This dist includes a copy of the FFMPEG source it
+was built against
