@@ -1,14 +1,34 @@
 #!/usr/bin/perl -w
 
 # use strict;
+# package FFMPEG::Effects;
 use FFMPEG::Effects;
-package FFMPEG::Effects;
+use Data::Dumper;
 
 
-my @title=TitleFade('size="cif"', 'framerate=30', 'color="black"', 'opacity=100', 'fadeinframes=50', 'fadeoutframes=50', 'holdframes=30', 'titleframes=299' );
-
-my @infade=FadeIn('vidfile="short.mpg"', 'size="cif"', 'framerate=30', 'color="black"', 'opacity=100', 'fadeinframes=90', 'fadeoutframes=56', 'holdframes=15', 'titleframes=91' );
+my $effect = new FFMPEG::Effects;
 
 
-my @outfade=FadeOut('vidfile="short.mpg-fadein.mpg"', 'size="cif"', 'framerate=30', 'color="black"', 'opacity=100', 'fadeinframes=90', 'fadeoutframes=56', 'holdframes=61', 'titleframes=91' );
+print Dumper($effect);
+
+
+#### black.png or other color is necessary!
+
+# $effect->TitleFade('size=1280x1024',  'framerate=30', 'color=black', 'opacity=100', 'fadeinframes=50', 'fadeoutframes=50', 'holdframes=30', 'titleframes=299', 'justify=center', 'fontcolor=magenta', 'font=Helvetica' );
+# $effect->TitleFade('size=cif',  'framerate=30', 'color=black', 'opacity=100', 'fadeinframes=50', 'fadeoutframes=50', 'holdframes=30', 'titleframes=299', 'fontcolor=magenta', 'font=Courier' );
+
+$effect->TitleFade(
+		'size=1920x1080',
+	  	'framerate=24',
+	   	'opacity=100',
+	   	'fadeinframes=50',
+	   	'fadeoutframes=50',
+	   	'holdframes=30',
+	   	'titleframes=299',
+	   	'justify=center',
+	   	'fontcolor=white',
+	   	'color=black',
+		'pngfile=1920x1080-Black.png',
+	   	'font=Helvetica'
+		);
 

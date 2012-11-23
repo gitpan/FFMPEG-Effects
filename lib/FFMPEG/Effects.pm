@@ -1,8 +1,9 @@
 package FFMPEG::Effects;
 
-use warnings;
+# use warnings;
 # use strict;
 use MIME::Base64 ();
+use Data::Dumper;
 
 
 
@@ -12,82 +13,35 @@ FFMPEG::Effects - PERL Routines To Generate Titles And Fades With libavfilter
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
-
-# Set Initial Useful Values For Necessary Variables Not Passed In.
-my $vidfile="new-video.mpg";
-my $size="352x288";
-my $framerate=30;
-my $fadeinframes=75;
-my $fadeoutframes=75;
-my $holdframes=60;
-my $titleframes=90;
-my $color="green";
-my $opacity=100;
-my $width="352";
-my $height="288";
-my $DurationSecs=30;
-
-
-my $DurationData="";
-
-my $fadefactor=1;
-my $i=0;
-
-my $prec1=length($fadeinframes);
-my $prec2=length($fadeoutframes);
-
-my @ProcDataArray="";
-my $ProcData="";
-
-my $VideoData="";
-my @VideoDataArray="";
-
-my @StreamInfo="";
-my @Params="";
-
-
-print("Defaults: \n");
-print("vidfile: $vidfile\n");
-print("size: $size\n");
-print("framerate: $framerate\n");
-print("fadeinframes: $fadeinframes\n");
-print("fadeoutframes: $fadeoutframes\n");
-print("holdframes: $holdframes\n");
-print("titleframes: $titleframes\n");
-print("color: $color\n");
-print("opacity: $opacity\n");
-print("width: $width\n");
-print("height: $height\n");
-print("DurationSecs: $DurationSecs\n");
-print("\n");
-print("\n");
 
 
 =head1 SYNOPSIS
 
 use FFMPEG::Effects;
 
-package FFMPEG::Effects;
+	my $effect=FFMPEG::Effects->new();
 
-## This Module Uses eval(), So Include It Via "package" Also, Or Fully Qualify Each Function Call As In First Example.
+	$effect->Help('all');
 
+	$effect->FadeIn('vidfile=short.mpg', 'size=cif', 'framerate=30', 'color=cyan', 'opacity=70', 'fadeinframes=90', 'fadeoutframes=56', 'holdframes=31', 'titleframes=91' );
 
-      my @infade=FFMPEG::Effects::FadeIn('vidfile="short.mpg"', 'size="cif"', 'framerate=30', 'color="cyan"', 'opacity=70', 'fadeinframes=90', 'fadeoutframes=56', 'holdframes=31', 'titleframes=91' );
+	$effect->TitleFade('size=cif',  'framerate=30', 'color=black', 'opacity=100', 'fadeinframes=50', 'fadeoutframes=50', 'holdframes=30', 'titleframes=299', 'fontcolor=white', 'font=Courier', 'justify=center' );
 
-      my @title=TitleFade('size="cif"', 'framerate=30', 'color="white"', 'opacity=100', 'fadeinframes=45', 'fadeoutframes=60', 'holdframes=45', 'titleframes=599' );
-
-      my @outfade=FadeOut('vidfile="short.mpg"', 'size="cif"', 'framerate=30', 'color="cyan"', 'opacity=70', 'fadeinframes=90', 'fadeoutframes=56', 'holdframes=31', 'titleframes=91' );
-
-
+	$effect->FadeOut('vidfile=short.mpg', 'size=cif', 'framerate=30', 'color=cyan', 'opacity=70', 'fadeinframes=90', 'fadeoutframes=56', 'holdframes=31', 'titleframes=91' );
 
 
 =head1 USAGE
+
+Make a Call to Help() To Find Out More.
+
+The Methods Shown Above Are Shown With Their Relevant Arguments
+And Can Be Called With No Arguments And Will Produce Useful Output.
 
 Use This Module As In The Examples Above, Sending An Array Of Quoted Strings
 To Each Function. Enclose String Values For Parameters In Double Quotes, 
@@ -106,75 +60,246 @@ See The Readme For More Info.
 
 =head1 SUBROUTINES/METHODS
 
-=head2 SetParams()  Set Necessary Parameters To Operate.
+
+=head2 new()  Instantiate
 
 =cut
 
+
+my $DurationData="";
+
+my $fadefactor=1;
+my $i=0;
+
+my @ProcDataArray="";
+my $ProcData="";
+
+my $VideoData="";
+my @VideoDataArray="";
+
+my @StreamInfo="";
+my @Params="";
+
+sub new
+{
+	my( $class, $debug ) = @_;
+
+	# Set To Useful Values If Not Passed In.
+	my $self = { 
+				'vidfile' => 'new-video.mpg',
+				'size' => '352x288',
+				'framerate' => '30',
+				'fadeinframes' => '75',
+				'fadeoutframes' => '75',
+				'holdframes' => '0',
+				'titleframes' => '90',
+				'color' => 'blue',
+				'opacity' => '100',
+				'width' => '352',
+				'height' => '288',
+				'DurationSecs' => '30',
+				'aspect' => 'NA',
+				'pngfile' => 'none',
+				'justify' => 'center',
+				'font' => 'Courier',
+				'fontsize' => 'not-set',
+				'fontcolor' => 'white',
+				};
+
+	if ( $debug )
+	{
+		$self->{'debug'} = eval("\$".$debug);
+	}
+
+	return bless( $self, $class);
+
+}
+
+=head2 Help() Print Help 
+
+=cut
+
+sub Help
+{
+	my ( $self, @inputargs) = @_;
+
+	my $helphash = { 
+					'vidfile' => 'The File Name of The Video File To Be Used As Input Or For Output',
+					'size' => 'Video Image Size -- Can Use \'cif\', etc, or \'<width>x<height>\' ',
+					'framerate' => 'Output File Frame Rate',
+					'fadeinframes' => 'Number of Frames A \'Fade In\' Is Spread Over',
+					'fadeoutframes' => 'Number of Frames A \'Fade Out\' Is Spread Over',
+					'holdframes' => 'Number Of Frames Added to Beginning or End of Effect To Increase Its Duration',
+					'titleframes' => 'Number of Frames That \'Title\' Frame Will Persist',
+					'color' => 'The \'Fade To\' And \'Fade From\' Color',
+					'opacity' => 'Final Opacity of Fade Sequence',
+					'width' => 'Image Size In Width -- Internal Variable, Derived From \'size\'',
+					'height' => 'Image Size In Height -- Internal Variable Derived From \'size\'',
+					'aspect' => 'Aspect Ratio -- Internal Variable Derived From \'size\'',
+					'DurationSecs' => 'Total Duration Of Video In Seconds',
+					'fontcolor' => 'Text Color Used In Generated Titles',
+					'justify' => 'Left, Center, or Right Justify Text In Generated Titles',
+					'pngfile' => 'PNG Image File Used To Underlay Generated Titles'
+					};
+
+
+	if ( ( ! @inputargs ) || ( $inputargs[0] eq 'all' ) )
+	{
+		print("\nHelp for all...\n");
+
+		while( my ($key, $value ) = each(%$helphash) ) 
+		{
+ 			print("\t$key : $value\n");
+		}	
+
+		print("\n");
+		print("Defaults: \n");
+		while( my ($key, $value ) = each(%$self) ) 
+		{
+ 			print("\t$key : $value\n");
+		}	
+		print("\n");
+	}
+	else 
+	{
+		foreach( @inputargs )
+		{
+			if ( $helphash->{$_}   ) 
+			{
+	 			print("$_: $helphash->{$_}, \n");
+			}
+			else
+			{
+				print("Help -- No Help For: $_ ... Try 'all'\n");
+
+			}
+		}
+	}
+
+	while( my ($key, $value ) = each(%$inputargs) ) 
+	{
+ 		print($value, "\n");
+ 		print($helphash->{$key}, "\n");
+	}	
+
+}
+
+=head2 TestReel()  Generate Test Reel
+
+=cut
+
+sub TestReel
+{
+	my ( $self, $inputargs) = @_;
+	print Dumper($self);
+}
+
+
+=head2 SetParams()  Set Necessary Parameters To Operate.
+		Called By Effects Functions To Store Input Arguments
+=cut
+
+
 sub SetParams 
 {
-my $data="";
 
-# Make Variables Available To eval(); below.
-# Set To Useful Values If Not Passed In.
-$vidfile="new-video.mpg";
-$size="352x288";
-$framerate=30;
-$fadeinframes=75;
-$fadeoutframes=75;
-$holdframes=60;
-$titleframes=90;
-$color="blue";
-$opacity=100;
-$width="352";
-$height="288";
-$DurationSecs=30;
+	my ( $self, @inputargs) = @_;
+	my $data="";
+	# print Dumper($self);
+	
+	foreach (@inputargs)
+	{
+		$data=($_ );
+		my @argdata = split( '=', $data);
+		my $param = $argdata[0];
+		my $val = $argdata[1];
+	
+		if ( ! $self->{ $param } )
+		{
+				# print("No Such Parameter -- $param \n");
+			$self->{$param} = $val;
+		}
+		else
+		{
+				# print("Indata -- $param : $val \n");
+			$self->{$param} = $val;
+		}
+	}
+	
+	
+	my $size = $self->{ 'size' };
+	
+	if ( $size eq "sqcif" ) { $size="128x96" };
+	if ( $size eq "qcif" ) { $size="176x144" };
+	if ( $size eq "cif" ) { $size="352x288" };
+	if ( $size eq "4cif" ) { $size="704x576" };
+	if ( $size eq "16cif" ) { $size="1408x1152" };
+	if ( $size eq "qqvga" ) { $size="160x120" };
+	if ( $size eq "qvga" ) { $size="320x240" };
+	if ( $size eq "vga" ) { $size="640x480" };
+	if ( $size eq "svga" ) { $size="800x600" };
+	if ( $size eq "xga" ) { $size="1024x768" };
+	if ( $size eq "uxga" ) { $size="1600x1200" };
+	if ( $size eq "qxga" ) { $size="2048x1536" };
+	if ( $size eq "sxga" ) { $size="1280x1024" };
+	if ( $size eq "qsxga" ) { $size="2560x2048" };
+	if ( $size eq "hsxga" ) { $size="5120x4096" };
+	if ( $size eq "wvga" ) { $size="852x480" };
+	if ( $size eq "wxga" ) { $size="1366x768" };
+	if ( $size eq "wsxga" ) { $size="1600x1024" };
+	if ( $size eq "wuxga" ) { $size="1920x1200" };
+	if ( $size eq "woxga" ) { $size="2560x1600" };
+	if ( $size eq "wqsxga" ) { $size="3200x2048" };
+	if ( $size eq "wquxga" ) { $size="3840x2400" };
+	if ( $size eq "whsxga" ) { $size="6400x4096" };
+	if ( $size eq "whuxga" ) { $size="7680x4800" };
+	if ( $size eq "cga" ) { $size="320x200" };
+	if ( $size eq "ega" ) { $size="640x350" };
+	if ( $size eq "hd480" ) { $size="852x480" };
+	if ( $size eq "hd720" ) { $size="1280x720" };
+	
+	$self->{ 'size' } = $size;
+	
+	my @sizedata=split(/[xX]/, $size);
+	my $width=$sizedata[0];
+	my $height=$sizedata[1];
+	
+	$self->{ 'width' } = $width;
+	$self->{ 'height' } = $height;
+
+	my $foo  =  ($width / $height);
+
+	my  $aspectratio = sprintf("%.2f", $foo);
+
+	if (  $aspectratio == 1.78 )
+	{
+		$self->{ 'aspect' } = 'HD';
+	}
+
+	if (  $aspectratio  == 1.33 )
+	{
+		$self->{ 'aspect' } = 'TV';
+	}
+
+	if (  $aspectratio  == 1.50 )
+	{
+		$self->{ 'aspect' } = 'NTSC';
+	}
+
+	if ( ! ( ($aspectratio  == 1.33) || ($aspectratio  == 1.78) || ($aspectratio  == 1.50) )  ) 
+	{
+		$self->{ 'aspect' } = 'OTHER';
+	}
 
 
-foreach (@_)
-{
-	$data=('$' . $_ . ';' );
-	eval($data);
+	$self->{ 'prec1' } = length( $self->{ 'fadeinframes' } );
+	$self->{ 'prec2' } = length( $self->{ 'fadeoutframes' });
+	
+	# print Dumper($self);
+	# die $aspectratio;
+	
+	return();
 }
-
-if ( $size eq "sqcif" ) { $size="128x96" };
-if ( $size eq "qcif" ) { $size="176x144" };
-if ( $size eq "cif" ) { $size="352x288" };
-if ( $size eq "4cif" ) { $size="704x576" };
-if ( $size eq "16cif" ) { $size="1408x1152" };
-if ( $size eq "qqvga" ) { $size="160x120" };
-if ( $size eq "qvga" ) { $size="320x240" };
-if ( $size eq "vga" ) { $size="640x480" };
-if ( $size eq "svga" ) { $size="800x600" };
-if ( $size eq "xga" ) { $size="1024x768" };
-if ( $size eq "uxga" ) { $size="1600x1200" };
-if ( $size eq "qxga" ) { $size="2048x1536" };
-if ( $size eq "sxga" ) { $size="1280x1024" };
-if ( $size eq "qsxga" ) { $size="2560x2048" };
-if ( $size eq "hsxga" ) { $size="5120x4096" };
-if ( $size eq "wvga" ) { $size="852x480" };
-if ( $size eq "wxga" ) { $size="1366x768" };
-if ( $size eq "wsxga" ) { $size="1600x1024" };
-if ( $size eq "wuxga" ) { $size="1920x1200" };
-if ( $size eq "woxga" ) { $size="2560x1600" };
-if ( $size eq "wqsxga" ) { $size="3200x2048" };
-if ( $size eq "wquxga" ) { $size="3840x2400" };
-if ( $size eq "whsxga" ) { $size="6400x4096" };
-if ( $size eq "whuxga" ) { $size="7680x4800" };
-if ( $size eq "cga" ) { $size="320x200" };
-if ( $size eq "ega" ) { $size="640x350" };
-if ( $size eq "hd480" ) { $size="852x480" };
-if ( $size eq "hd720" ) { $size="1280x720" };
-
-
-my @sizedata=split(/[xX]/, $size);
-my $width=$sizedata[0];
-my $height=$sizedata[1];
-
-
-@Params=($vidfile, $size, $framerate, $fadeinframes, $fadeoutframes, $holdframes, $titleframes, $color, $opacity, $width, $height, $DurationSecs); 
-return(@Params);
-}
-
 
 =head2 FadeIn()  Fade In From Solid Or Transparent Color To Scene.
 
@@ -182,26 +307,27 @@ return(@Params);
 
 sub FadeIn  
 {
-print("value of \@_ sent to FadeIn: @_\n");
 
-# my @testit=SetParams(@_);
-# print("Return of \@Params from SetParams() = @testit\n");
-SetParams(@_);
+$self->SetParams(@_);
 
-$vidfile=shift(@Params);
-$size=shift(@Params);
-$framerate=shift(@Params);
-$fadeinframes=shift(@Params);
-$fadeoutframes=shift(@Params);
-$holdframes=shift(@Params);
-$titleframes=shift(@Params);
-$color=shift(@Params);
-$opacity=shift(@Params);
-$width=shift(@Params);
-$height=shift(@Params);
-$DurationSecs=shift(@Params);
+$vidfile=$self->{'vidfile'};
+$size=$self->{'size'};
+$framerate=$self->{'framerate'};
+$fadeinframes=$self->{'fadeinframes'};
+$fadeoutframes=$self->{'fadeoutframes'};
+$holdframes=$self->{'holdframes'};
+$titleframes=$self->{'titleframes'};
+$color=$self->{'color'};
+$opacity=$self->{'opacity'};
+$width=$self->{'width'};
+$height=$self->{'height'};
+$DurationSecs=$self->{'DurationSecs'};
+$prec1=$self->{'prec1'};
+$prec2=$self->{'prec2'};
+$aspect=$self->{'aspect'};
 
-print("remaining values of \@Params from SetParams() = @Params\n");
+
+# print("remaining values of \@Params from SetParams() = @Params\n");
 
 
 my $frameno=0;
@@ -221,8 +347,8 @@ print("nextval: $next\n");
 
 	for ( $frameno = 1; $frameno <= $holdframes; $frameno++)
 	{
-		$ProcData=`ffmpeg -y -qmin 1 -qmax 1 -g 0 -vframes 1 -i $vidfile -r $framerate -vf "color=$color\@$fade:$size [layer1]; [in][layer1] overlay=0:0" -s $size -qmin 1 -qmax 1 -g 0 hold-$frameno.mpg  2>&1`;
-		# print $ProcData;
+		$ProcData=`ffmpeg -y -qmin 1 -qmax 1 -g 0 -i $vidfile -r $framerate -vf "color=$color\@$fade:$size [layer1]; [in][layer1] overlay=0:0" -s $size -qmin 1 -qmax 1 -g 0 -vframes 1 hold-$frameno.mpg  2>&1`;
+		print $ProcData;
 
 		system("cat hold-$frameno.mpg >> $vidfile-front.mpg"); 
 
@@ -243,10 +369,10 @@ print("nextval: $next\n");
 
 		print("Opacity: $fade\n");
 		$skip=( $skip + $next );
-		print("Next: $skip\n");
+		print("Next: $skip\n\n");
 
 
-		$ProcData=`ffmpeg -y -qmin 1 -qmax 1 -g 0 -ss $skip -vframes 1 -i $vidfile -r $framerate -vf "color=$color\@$fade:$size [layer1]; [in][layer1] overlay=0:0" -s $size -qmin 1 -qmax 1 -g 0 $vidfile-$frameno.mpg  2>&1`;
+		$ProcData=`ffmpeg -y -qmin 1 -qmax 1 -g 0 -ss $skip -i $vidfile -r $framerate -vf "color=$color\@$fade:$size [layer1]; [in][layer1] overlay=0:0" -s $size -qmin 1 -qmax 1 -g 0 -vframes 1 $vidfile-$frameno.mpg  2>&1`;
 
 		system("cat $vidfile-$frameno.mpg >> $vidfile-front.mpg"); 
 	}
@@ -272,25 +398,26 @@ return @ProcDataArray;
 sub FadeOut
 {
 
-print("value of \@_ sent to FadeOut: @_\n");
+$self->SetParams(@_);
 
-# my @testit=SetParams(@_);
-# print("Return of \@Params from SetParams() = @testit\n");
-SetParams(@_);
-$vidfile=shift(@Params);
-$size=shift(@Params);
-$framerate=shift(@Params);
-$fadeinframes=shift(@Params);
-$fadeoutframes=shift(@Params);
-$holdframes=shift(@Params);
-$titleframes=shift(@Params);
-$color=shift(@Params);
-$opacity=shift(@Params);
-$width=shift(@Params);
-$height=shift(@Params);
-$DurationSecs=shift(@Params);
+$vidfile=$self->{'vidfile'};
+$size=$self->{'size'};
+$framerate=$self->{'framerate'};
+$fadeinframes=$self->{'fadeinframes'};
+$fadeoutframes=$self->{'fadeoutframes'};
+$holdframes=$self->{'holdframes'};
+$titleframes=$self->{'titleframes'};
+$color=$self->{'color'};
+$opacity=$self->{'opacity'};
+$width=$self->{'width'};
+$height=$self->{'height'};
+$DurationSecs=$self->{'DurationSecs'};
+$prec1=$self->{'prec1'};
+$prec2=$self->{'prec2'};
+$aspect=$self->{'aspect'};
 
-print("remaining values of \@Params from SetParams() = @Params\n");
+
+# print("remaining values of \@Params from SetParams() = @Params\n");
 
 GetDuration($vidfile);
 print("duration $DurationSecs\n");
@@ -300,7 +427,6 @@ print("duration $DurationSecs\n");
 my $frameno=0;
 my $fade=0;
 my $fadefactor=( ( ( $opacity / 100 ) / $fadeoutframes) );
-
 
 
 my $skipsecs=(  (($framerate * $DurationSecs ) - $fadeoutframes) / $framerate  );
@@ -317,7 +443,7 @@ my $frontframes=($framerate * $skipsecs);
 my $front=sprintf("%d", $frontframes);
 
 $ProcData=`ffmpeg -y -qmin 1 -qmax 1 -g 0 -i $vidfile -r $framerate -s $size -g 0 $vidfile-tmp.mpg  2>&1`;
-$ProcData=`ffmpeg -y -qmin 1 -qmax 1 -g 0 -vframes $front -i $vidfile -r $framerate -s $size $vidfile-front.mpg  2>&1`;
+$ProcData=`ffmpeg -y -qmin 1 -qmax 1 -g 0 -i $vidfile -r $framerate -s $size -vframes $front $vidfile-front.mpg  2>&1`;
 print $ProcData;
 
 	for ( $frameno = 1; $frameno <= $fadeoutframes; $frameno++)
@@ -334,7 +460,7 @@ print $ProcData;
 
 			for ( $holdframe = 1; $holdframe <= $holdframes; $holdframe++)
 			{
-				$ProcData=`ffmpeg -y -qmin 1 -qmax 1 -g 0 -ss $skip -vframes 1 -i $vidfile-tmp.mpg -r $framerate -vf "color=$color\@$fade:$size [layer1]; [in][layer1] overlay=0:0" -s $size -qmin 1 -qmax 1 -g 0 hold-$frameno.mpg  2>&1`;
+				$ProcData=`ffmpeg -y -qmin 1 -qmax 1 -g 0 -ss $skip -i $vidfile-tmp.mpg -r $framerate -vf "color=$color\@$fade:$size [layer1]; [in][layer1] overlay=0:0" -s $size -qmin 1 -qmax 1 -g 0 -vframes 1 hold-$frameno.mpg  2>&1`;
 				print $ProcData;
 				system("cat hold-$frameno.mpg >> $vidfile-front.mpg"); 
 			}
@@ -343,17 +469,15 @@ print $ProcData;
 
 		print("Opacity: $fade\n");
 		$skip=( $skip + $next );
-		print("Next: $skip\n");
+		print("Next: $skip\n\n");
 
 
-		$ProcData=`ffmpeg -y -qmin 1 -qmax 1 -g 0 -ss $skip -vframes 1 -i $vidfile-tmp.mpg -r $framerate -vf "color=$color\@$fade:$size [layer1]; [in][layer1] overlay=0:0" -s $size -qmin 1 -qmax 1 -g 0 $vidfile-$frameno.mpg  2>&1`;
+		$ProcData=`ffmpeg -y -qmin 1 -qmax 1 -g 0 -ss $skip -i $vidfile-tmp.mpg -r $framerate -vf "color=$color\@$fade:$size [layer1]; [in][layer1] overlay=0:0" -s $size -qmin 1 -qmax 1 -g 0 -vframes 1 $vidfile-$frameno.mpg  2>&1`;
 		# print $ProcData;
 
 		system("cat $vidfile-$frameno.mpg >> $vidfile-front.mpg"); 
 
 	}
-
-
 
 
 system("mv $vidfile-front.mpg fadeout.mpg"); 
@@ -378,11 +502,12 @@ sub Transition
 
 sub GetDuration
 {
-my $vidfile=shift;
 
-# Stream Whole File
+$vidfile=$self->{'vidfile'};
+
+## Stream Whole File
 # my $VideoData=`ffmpeg  -i $vidfile -f null /dev/null 2>&1`;
-# Summary Only 
+## Summary Only 
 my $VideoData=`ffmpeg  -i $vidfile  2>&1`;
  
 $VideoData =~ s/\r/\n/g;
@@ -397,6 +522,8 @@ my @VideoDataArray=split("\n", $VideoData);
 		}
 
 	}
+
+print("DurationData--->  $DurationData \n");
 
 $DurationData =~ s/ //g;
 my @DurationArray=split(",", $DurationData);
@@ -417,41 +544,170 @@ return($DurationSecs);
 
 sub GetStreamInfo
 {
-my $vidfile=shift;
+
+$self->SetParams(@_);
+
+$vidfile=$self->{'vidfile'};
+
+my $StreamInfo = {};
+my $ffmpeg = {};
+my $StreamCount = 0;
 
 my $ProcData=`ffmpeg  -i $vidfile  2>&1`;
 $ProcData =~ s/\r/\n/g;
 $ProcData =~ s/\n */\n/g;
 my @ProcDataArray=split("\n", $ProcData);
 
-
-
 	foreach $i (0..$#ProcDataArray)
 	{
-		if ( $ProcDataArray[$i] =~ /Stream #0.0.*fps/ )
+			# print("--->> $ProcDataArray[$i]\n");
+
+		if ( $ProcDataArray[$i] =~ /FFmpeg version/ )
 		{
 			$ProcData=$ProcDataArray[$i];
+			my @ProcArray=split(", ", $ProcData);
+			# print("$ProcArray[0]\n");
+			# print("$ProcArray[1]\n");
+			$ffmpeg->{'version'} = $ProcArray[0];
+			$ffmpeg->{'Copyright'} = $ProcArray[1];
 		}
+
+		if ( $ProcDataArray[$i] =~ /built on/ )
+		{
+			$ProcData=$ProcDataArray[$i];
+			my @ProcArray=$ProcData;
+			# print("$ProcArray[0]\n");
+			$ffmpeg->{'builton'} = $ProcArray[0];
+			# print($StreamInfo->{'builton'}, "\n");
+		}
+
+		if ( $ProcDataArray[$i] =~ /configuration:/ )
+		{
+			$ProcData=$ProcDataArray[$i];
+			my @ProcArray=$ProcData;
+			# print("$ProcArray[0]\n");
+			my @dataline = split(": ", $ProcArray[0]);
+			$ffmpeg->{'configuration'} = $dataline[1];
+		}
+
+		if ( $ProcDataArray[$i] =~ /libav/ )
+		{
+			$ProcData=$ProcDataArray[$i];
+			my @ProcArray=$ProcData;
+			my ( $foo ) = ( $ProcArray[0] =~ m/(^.*?) /);
+			$ProcArray[0] =~ s/(^.*?) /$foo-/;
+			$ProcArray[0] =~ s/ //g;
+			# print("$ProcArray[0]\n");
+			my @libav=split('-', $ProcArray[0]);
+			$ffmpeg->{$libav[0]} = $libav[1];
+		}
+
+		if ( $ProcDataArray[$i] =~ /libsw/ )
+		{
+			$ProcData=$ProcDataArray[$i];
+			my @ProcArray=$ProcData;
+			my ( $foo ) = ( $ProcArray[0] =~ m/(^.*?) /);
+			$ProcArray[0] =~ s/(^.*?) /$foo-/;
+			$ProcArray[0] =~ s/ //g;
+			# print("$ProcArray[0]\n");
+			my @libsw=split('-', $ProcArray[0]);
+			$ffmpeg->{$libsw[0]} = $libsw[1];
+		}
+
+		if ( $ProcDataArray[$i] =~ /Input/ )
+		{
+			$ProcData=$ProcDataArray[$i];
+			my @ProcArray=split(", ", $ProcData);
+			# print("$ProcArray[0]\n");
+			# print("$ProcArray[1]\n");
+			# print("$ProcArray[2]\n");
+			$ProcArray[0] =~ s/ //g;
+			$ProcArray[2] =~ s/from //g;
+			$ProcArray[2] =~ s/://g;
+			$ProcArray[2] =~ s/'//g;
+			$StreamInfo->{$ProcArray[0]}->{'container'} = $ProcArray[1];
+			$StreamInfo->{$ProcArray[0]}->{'source'} = $ProcArray[2];
+		}
+
+		if ( $ProcDataArray[$i] =~ /Duration:/ )
+		{
+			my @dataline = ();
+			$ProcData=$ProcDataArray[$i];
+			my @ProcArray=split(", ", $ProcData);
+			# print("^$ProcArray[0]\n");
+			# print("^^$ProcArray[1]\n");
+			# print("^^^$ProcArray[2]\n");
+
+			@dataline = split(": ", $ProcArray[0]);
+			$StreamInfo->{$dataline[0]} = $dataline[1];
+
+			@dataline = split(": ", $ProcArray[1]);
+			$StreamInfo->{$dataline[0]} = $dataline[1];
+
+			@dataline = split(": ", $ProcArray[2]);
+			$StreamInfo->{$dataline[0]} = $dataline[1];
+
+			my @timearray=split(":", $StreamInfo->{'Duration'});
+
+			$DurationSecs=($timearray[0] * 3600) + ($timearray[1] * 60 ) + $timearray[2];
+
+			$StreamInfo->{'DurationSecs'} = $DurationSecs;
+		}
+
+		if ( $ProcDataArray[$i] =~ /Stream/ )
+		{
+			my @dataline = ();
+			$ProcData=$ProcDataArray[$i];
+			my @ProcArray=split(": ", $ProcData);
+
+			$ProcArray[0] =~ s/ //g;
+
+			@dataline = split("\\[", $ProcArray[0]);
+			my $stream = $dataline[0];
+
+			$StreamInfo->{$stream}->{'type'} = $ProcArray[1];
+
+			if ( $StreamInfo->{$stream}->{'type'} =~ /Video/)
+			{
+				@dataline = split(", ", $ProcArray[2]);
+				$StreamInfo->{$stream}->{'codec'} = $dataline[0];
+				$StreamInfo->{$stream}->{'colorspace'} = $dataline[1];
+				$StreamInfo->{$stream}->{'aspect'} = $dataline[2];
+				$StreamInfo->{$stream}->{'bitrate'} = $dataline[3];
+				$StreamInfo->{$stream}->{'framerate'} = $dataline[4];
+				$StreamInfo->{$stream}->{'tbr'} = $dataline[5];
+				$StreamInfo->{$stream}->{'tbn'} = $dataline[6];
+				$StreamInfo->{$stream}->{'tbc'} = $dataline[7];
+
+				$StreamCount++;
+			}
+
+			if ( $StreamInfo->{$stream}->{'type'} =~ /Audio/)
+			{
+				@dataline = split(", ", $ProcArray[2]);
+				$StreamInfo->{$stream}->{'codec'} = $dataline[0];
+				$StreamInfo->{$stream}->{'samplerate'} = $dataline[1];
+				$StreamInfo->{$stream}->{'channels'} = $dataline[2];
+				$StreamInfo->{$stream}->{'sampletype'} = $dataline[3];
+				$StreamInfo->{$stream}->{'bitrate'} = $dataline[4];
+
+				$StreamCount++;
+			}
+
+			# 	print("^$ProcArray[0]\n");
+			#	print("^^$ProcArray[1]\n");
+			#	print("^^^$ProcArray[2]\n");
+
+		}
+
 	}
 
-$ProcData =~ s/ //g;
-my @ProcArray=split(",", $ProcData);
+	if ($self->{'debug'})
+	{
+		print Dumper($ffmpeg);
+		print Dumper($StreamInfo);
+	}
 
-# print("@ProcArray\n");
-
-my @sizedata=split(/\[/, $ProcArray[2]);
-
-$size=$sizedata[0];
-print("size $size\n");
-
-$framerate=$ProcArray[4];
-
-$framerate =~ s/fps//;
-$framerate =~ s/ //;
-
-# print("$ProcArray[4]\n");
-# print("$framerate\n");
-# return($framerate);
 @StreamInfo=($framerate, $size);
 return(@StreamInfo);
 
@@ -465,72 +721,104 @@ return(@StreamInfo);
 
 sub TitleFade 
 {
-print("value of \@_ sent to OpeningTitle: @_\n");
 
-# my @testit=SetParams(@_);
-# print("Return of \@Params from SetParams() In TitleFade = @testit\n");
-SetParams(@_);
-
-Clear1024x7681Frame();
-
-$vidfile=shift(@Params);
-$size=shift(@Params);
-$framerate=shift(@Params);
-$fadeinframes=shift(@Params);
-$fadeoutframes=shift(@Params);
-$holdframes=shift(@Params);
-$titleframes=shift(@Params);
-$color=shift(@Params);
-$opacity=shift(@Params);
-$width=shift(@Params);
-$height=shift(@Params);
-$DurationSecs=shift(@Params);
-
-print("remaining values of \@Params from SetParams() = @Params\n");
-
-my $frameno=0;
-my $fadefactor=( ($opacity / $fadeinframes) );
-
-my $fade=($opacity / 100);
-
-system("rm -f $vidfile-front.mpg"); 
-system("rm -f $vidfile-titlebackground.mpg"); 
-
-PSTitleFrame();
-
-$ProcData=`gs -dBATCH -dNOPAUSE -sDEVICE=pngalpha -g288x352 -sOutputFile=title.tmp.png Title.ps`;
-$ProcData=`convert -rotate 90 title.tmp.png title.png`;
-# $ProcData=`convert RCA_Indian_Head_test_pattern.JPG -scale 352 title.png`;
+	$self->SetParams(@_);
+	
+	$vidfile=$self->{'vidfile'};
+	$size=$self->{'size'};
+	$framerate=$self->{'framerate'};
+	$fadeinframes=$self->{'fadeinframes'};
+	$fadeoutframes=$self->{'fadeoutframes'};
+	$holdframes=$self->{'holdframes'};
+	$titleframes=$self->{'titleframes'};
+	$color=$self->{'color'};
+	$opacity=$self->{'opacity'};
+	$width=$self->{'width'};
+	$height=$self->{'height'};
+	$DurationSecs=$self->{'DurationSecs'};
+	$prec1=$self->{'prec1'};
+	$prec2=$self->{'prec2'};
+	$aspect=$self->{'aspect'};
+	
+	my $gsize = $height . 'x' . $width;
+	
+	# print("remaining values of \@Params from SetParams() = @Params\n");
+	
+	my $frameno=0;
+	my $fadefactor=( ($opacity / $fadeinframes) );
+	
+	my $fade=($opacity / 100);
+	
+	system("rm -f $vidfile-front.mpg"); 
+	system("rm -f $vidfile-titlebackground.mpg"); 
 
 
-my $skipsecs=0;
-print("skipsecs: $skipsecs\n");
-my $skip=sprintf("%.2f", $skipsecs);
-my $next=( 1 / $framerate);
-print("skip: $skip\n");
-print("nextval: $next\n");
 
+### Here is where the main difficulty is:
+### GhostScript seems to be a bit buggy when generating PNG Images.
+### When a PNG Image is successfully generated, the FFMPEG
+### Functions usually will work just fine. 
 
-Clear1024x7681Frame();
+if (  ( ! $self->{'pngfile'} ) || ( $self->{'pngfile'} eq 'none' ) )
+	{
+		$self->PSTitleFrame();
+		$ProcData=`gs -dBATCH -dNOPAUSE -sDEVICE=pngalpha -g"$gsize" -sOutputFile=title.tmp.png Title.ps`;
+		$ProcData=`convert -rotate 90 title.tmp.png title.png`;
+	}
+else 
+ 	{
+ 		$self->PSTitleFrame();
+ 		$ProcData=`gs -dBATCH -dNOPAUSE -sDEVICE=pngalpha -g"$gsize" -sOutputFile=title.tmp.png Title.ps`;
+ 		$ProcData=`convert -rotate 90 title.tmp.png title.png`;
+ 		$ProcData=`convert $self->{'pngfile'} -resize $self->{'size'}!  pngfile.png`;
+ 		$ProcData=`convert pngfile.png title.png -composite -size $gsize composite.png`;
+ 		$ProcData=`mv composite.png title.png`;
+ 	}
 
+	# $ProcData=`gs -dBATCH -dNOPAUSE -sDEVICE=pngalpha -g288x352 -sOutputFile=title.tmp.png Title.ps`;
+	# $ProcData=`convert RCA_Indian_Head_test_pattern.JPG -scale 352 title.png`;
+	
+	my $skipsecs=0;
+	print("skipsecs: $skipsecs\n");
+	my $skip=sprintf("%.2f", $skipsecs);
+	my $next=( 1 / $framerate);
+	print("skip: $skip\n");
+	print("nextval: $next\n");
+	
+
+	if ( $aspect  eq 'HD')
+	{
+		Clear1600x9001Frame();
+	}
+
+	if ( $aspect  eq 'NTSC')
+	{
+		Clear720x4801Frame();
+	}
+	else
+	{
+		Clear1024x7681Frame();
+	}
+	
 	for ( $frameno = 1; $frameno <= $titleframes; $frameno++)
 	{
 		system("cat color-0.mpg >> $vidfile-titlebackground.mpg"); 
 	}
 
-$ProcData=`ffmpeg -y -i $vidfile-titlebackground.mpg -vf "movie=0:png:title.png [title]; [in][title] overlay=0:0" -qmin 1 -qmax 1 -g 0 -s $size  title-out.mpg  `;
-print("$ProcData\n");
+	$ProcData=`ffmpeg -y -i $vidfile-titlebackground.mpg -vf "movie=0:png:title.png [title]; [in][title] overlay=0:0" -qmin 1 -qmax 1 -g 0 -s $size  title-out.mpg  `;
+	print("$ProcData\n");
 
 
-FadeIn('vidfile="title-out.mpg"', 'size="' . $size . '"', 'framerate=' . $framerate, 'color="' . $color . '"', 'opacity=' . $opacity, 'fadeinframes=' . $fadeinframes, 'fadeoutframes=' . $fadeoutframes, 'holdframes=' . $holdframes, 'titleframes=' . $titleframes );
-FadeOut('vidfile="title-out.mpg-fadein.mpg"', 'size="' . $size . '"', 'framerate=' . $framerate, 'color="' . $color . '"', 'opacity=' . $opacity, 'fadeinframes=' . $fadeinframes, 'fadeoutframes=' . $fadeoutframes, 'holdframes=' . $holdframes, 'titleframes=' . $titleframes );
+	$self->FadeIn("vidfile=title-out.mpg", "size=$size", "framerate=$framerate", "color=$color", "opacity=$opacity", "fadeinframes=$fadeinframes", "fadeoutframes=$fadeoutframes", "holdframes=$holdframes", "titleframes=$titleframes" );
 
 
+	$self->FadeOut("vidfile=title-out.mpg-fadein.mpg", "size=$size", "framerate=$framerate", "color=$color", "opacity=$opacity", "fadeinframes=$fadeinframes", "fadeoutframes=$fadeoutframes", "holdframes=$holdframes", "titleframes=$titleframes" );
 
-system("mv $vidfile-fadeout.mpg titlefade.mpg"); 
 
-system("rm -f title-out*"); 
-return @ProcDataArray;
+	system("mv $vidfile-fadeout.mpg titlefade.mpg"); 
+
+	system("rm -f title-out*"); 
+	return @ProcDataArray;
 }
 
 
@@ -770,12 +1058,839 @@ close (OUTFILE);
 return($returndata);
 }
 
+=head2 Clear1600x9001Frame()  Returns Base64 Encoded 1600x900 MPG 1 Frame.
+
+=cut
+
+sub Clear1600x9001Frame {
+
+my $clearframe=<<DATA;
+AAABuiEAA0ghwzNnAAABuwAJwzNnACH/4ODmAAAB4AffMQAFvyERAAWnsQAAAbNkA4QV///gGAAA
+AbgACAAAAAABAAAP//gAAAEBC/h9KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUAAAHg
+B/oPIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIgAAAeAH+g8u
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuAAAB4Af6D1KUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlIAAAHgB/oPlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlAAAAeAH+g+IuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIAAAB4Af6D7lKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLkAAAHgB/oPSlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SgAAAeAH+g9SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSAAAB4Af6DyLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiIAAAHgBAwP5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIiAAABvgPoD///////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+/////////////////w==
+DATA
+
+
+# my $returndata=uudecode($clearframe);
+my $returndata=MIME::Base64::decode($clearframe);
+
+open (OUTFILE,  '>', "color-0.mpg") or  die $!;
+print(OUTFILE $returndata);
+close (OUTFILE);
+
+return($returndata);
+}
+
+=head2 Clear720x4801Frame()  Returns Base64 Encoded 1600x900 MPG 1 Frame.
+
+=cut
+
+sub Clear720x4801Frame {
+
+my $clearframe=<<DATA;
+AAABuiEAA0ghwzNnAAABuwAJwzNnACH/4ODmAAAB4AffMQAFvyERAAWnsQAAAbMtAeAV///gGAAA
+AbgACAAAAAABAAAP//gAAAEBC/h9KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
+iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
+LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
+lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
+KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
+UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUAAAHg
+B/oPIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
+5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
+SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
+lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
+Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
+i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIgAAAeAEHA8u
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
+uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
+UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
+pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
+SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
+IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIgAAABvgPYD///////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+DATA
+
+# my $returndata=uudecode($clearframe);
+my $returndata=MIME::Base64::decode($clearframe);
+
+open (OUTFILE,  '>', "color-0.mpg") or  die $!;
+print(OUTFILE $returndata);
+close (OUTFILE);
+
+return($returndata);
+}
 
 =head2 PSTitleFrame() Returns PostScript Title Frame Template.
 
 =cut
 
 sub PSTitleFrame {
+	my ( $self, @inputargs) = @_;
+
+	my $height = $self->{'height'};
+	my $width = $self->{'width'};
+	my $justify = $self->{'justify'};
+
+
+	my $hscale = ( $height * 10 );	
+	my $wscale = ( $width * 10 );	
+	
+	my $verysmallfontsize = 12;
+	my $smallfontsize = 18;
+	my $mediumfontsize = 28;
+	# my $largefontsize = 43; 
+	# my $autofontsize = 310; 
+
+	my $cyan = '0.7777';
+	my $magenta = '0.7777';
+	my $yellow = '0.7777';
+	my $black = '0.0000';
+
+
+    my $redline = "0.1111 0.7777 0.7777 0.0000 SET_CMYK \n";
+    my $blueline = "0.7777 0.7777 0.1111 0.0000 SET_CMYK \n";
+    my $greenline = "0.7777 0.1111 0.7777 0.0000 SET_CMYK \n";
+    my $cyanline = "0.7777 0.1111 0.1111 0.0000 SET_CMYK \n";
+    my $magentaline = "0.1111 0.7777 0.1111 0.0000 SET_CMYK \n";
+    my $yellowline = "0.1111 0.1117 0.7777 0.0000 SET_CMYK \n";
+    my $blackline = "0.9999 0.9999 0.9999 0.9999 SET_CMYK \n";
+		my $whiteline = "0.1051 0.1049 0.1051 0.0000 SET_CMYK \n";
+    my $greyline = "0.1111 0.1111 0.1111 0.5000 SET_CMYK \n";
+
+
+	my $colorline = $redline;
+
+	if ( lc($self->{'fontcolor'})  eq 'red' )
+	{
+		$colorline = $redline;
+	}
+
+	if ( lc($self->{'fontcolor'})  eq 'blue' )
+	{
+		$colorline = $blueline;
+	}
+
+	if ( lc($self->{'fontcolor'})  eq 'green' )
+	{
+		$colorline = $greenline;
+	}
+
+	if ( lc($self->{'fontcolor'})  eq 'cyan' )
+	{
+		$colorline = $cyanline;
+	}
+
+	if ( lc($self->{'fontcolor'})  eq 'magenta' )
+	{
+		$colorline = $magentaline;
+	}
+
+	if ( lc($self->{'fontcolor'})  eq 'yellow' )
+	{
+		$colorline = $yellowline;
+	}
+
+	if ( lc($self->{'fontcolor'})  eq 'white' )
+	{
+		$colorline = $whiteline;
+	}
+
+	if ( lc($self->{'fontcolor'})  eq 'grey' )
+	{
+		$colorline = $greyline;
+	}
+
+	if ( lc($self->{'fontcolor'})  eq 'black' )
+	{
+		$colorline = $blackline;
+	}
+
+	if ( lc($self->{'font'})  eq 'helvetica' )
+	{
+		$fontline = 'HelveticaLarge';
+	}
+
+	if ( lc($self->{'font'})  eq 'courier' )
+	{
+		$fontline = 'CourierLarge';
+	}
+	else
+	{
+		$fontline = 'CourierLarge';
+	}
+
+
+	my $titletextfile = 'title.txt';
+	# my $filesize = (stat($titletextfile))[7];
+	# print $filesize;
+
+	if ( ! open(FILE, "title.txt") ) 
+	{
+		open(FILE, "+>", "title.txt");
+		print(FILE "This Video\n\nProduced With:\n\nFFMPEG::Effects 0.4\n");
+		close(FILE);
+	}
+
+	open(FILE, "title.txt");
+	my $linecount = scalar(grep{/\n/}<FILE>);
+	print("$linecount \n");
+
+	my $longestline = 0;
+	seek( FILE, 0, 0);
+	while (<FILE>)
+	{
+		# chomp($_);
+		my $linelength = length($_);
+		if ( $linelength > $longestline )
+		{
+			$longestline = $linelength;
+		}
+	}
+	
+	if ( ( ! $self->{'fontsize'}  ) || ( $self->{'fontsize'}  eq 'not-set' )  )  
+	{
+		$fontsize = ( ( $wscale / 5 ) / $longestline );
+	}
+	else
+	{
+		$fontsize = $self->{'fontsize'}; 
+	}
+
+	my $pad = ( $fontsize * 2 );
+
+	my $letterheight = ( ( 6.7 * $fontsize ) * 1 );
+	# my $letterheight = ( ( 8 * $fontsize ) * 1 );
+	my $pct = ( ( $letterheight / $hscale ) * 100 );
+	my $factor =  ( ( ( 98 - $pct )  / 100 )  );
+
+
+	my $lineypos = ( $hscale  * $factor );
+	# my $yspace = ( $lineypos - ( 1 * $fontsize ) );
+	my $yspace = $lineypos;
+
+	my $largefontsize = $fontsize; 
+
+	# my $linespace =  ( ( $hscale / $linecount ) * 20 );
+	# my $linespace =  ( ( $hscale / $linecount ) * 20 );
+
+	my $pngdata = "\n";
+
+	my $linenumber = 0;
+	my $line1text = 'foo';
+	my $line1size;
+	my $line1ypos = 0;
+	my $line1xpos = 0;
+
+	# open(FILE, "title.txt");
+	seek( FILE, 0, 0);
+	while (<FILE>)
+	{
+			# print ++$a." $_" if /./ <FILE>;
+			# print "$_" if /./;
+			if ( /./ )
+			{
+				$linenumber++;
+
+				if ( $linenumber == 1 )
+				{
+					chomp($_);
+					$line1text = $_;
+					my $linecharcount = length($_);
+					# $fontsize = ($fontsize / $linecharcount);
+
+	 				use integer;
+	 					$largefontsize = $fontsize / 1; 
+	 					$fontsize = $fontsize / 1; 
+						$line1size = ( 5 * $fontsize * $linecharcount );
+	 				no integer;
+
+					$line1ypos = $lineypos;
+					$linespace = ( ( $yspace / $linecount ) *  1 );
+
+					if ($justify eq 'left')
+					{
+						$line1xpos = ( 0 );
+						$line1xpos =  ( $line1xpos  + $pad );
+					}
+
+					if ($justify eq 'center')
+					{
+						my $whitespace = ( ( $wscale  ) - ( $line1size ) );
+						$line1xpos =  ($whitespace / 2 );
+					}
+
+					if ($justify eq 'right')
+					{
+						$line1xpos = ( 0 );
+						my $whitespace = ( ( $wscale  ) - ( $line1size ) );
+						$line1xpos =  ( $whitespace - $pad  );
+					}
+
+					if ($largefontsize < 1)
+					{
+						$largefontsize = 1;
+					}
+
+				}
+
+				my $line = chomp($_);
+				my $linecharcount = length($_);
+				# print " $_" ;
+				# print($linecharcount, "\n");
+
+	 			use integer;
+	 				$largefontsize = $fontsize / 1; 
+	 				$fontsize = $fontsize / 1; 
+					$linesize = ( 5 * $fontsize * $linecharcount );
+	 			no integer;
+
+				if ($justify eq 'left')
+				{
+					$linexpos = ( 0 );
+					$linexpos =  ( $linexpos  + $pad );
+				}
+
+				if ($justify eq 'center')
+				{
+					my $whitespace = ( ( $wscale  ) - ( $linesize ) );
+					$linexpos = ($whitespace / 2 );
+				}
+
+				if ($justify eq 'right')
+				{
+					$linexpos = ( 0 );
+					my $whitespace = ( ( $wscale  ) - ( $linesize ) );
+					$linexpos =  ( $whitespace - $pad );
+				}
+
+
+				# my $psdata = 	"$cyan $magenta $yellow $black SET_CMYK \n".
+				my $psdata = 	$colorline.
+								"$fontline SETFONT \n".
+								"GS \n".
+								"n \n".
+								"$linexpos $lineypos M \n".
+								"($_) $linesize X \n".
+								"GR \n".
+								"\n";
+
+								# print $psdata;
+
+				$pngdata =  $pngdata . $psdata;
+
+				$lineypos = ( $lineypos - $linespace );
+				# $lineypos = ( $lineypos  * $factor );
+			}
+			else
+			{ 
+				my $linesize = ( 5 * $fontsize * 1 );
+				# my $whitespace = ( ( $wscale  ) - ( $linesize ) );
+				# my $linexpos = ( $whitespace / 2 );
+
+				# my $psdata = 	"$cyan $magenta $yellow $black SET_CMYK \n".
+				my $psdata = 	$colorline.
+								"$fontline SETFONT \n".
+								"GS \n".
+								"n \n".
+								"0 $lineypos M \n".
+								"( ) $linesize X \n".
+								"GR \n".
+								"\n";
+
+								# print $psdata;
+
+				$pngdata =  $pngdata . $psdata;
+
+				$lineypos = ( $lineypos - $linespace );
+			}
+
+	}
+
+	close(FILE);
+	print $pngdata;
+	# no integer;
+
 
 my $titleframe=<<DATA;
 %!PS-Adobe-3.0
@@ -797,7 +1912,7 @@ my $titleframe=<<DATA;
 /GS { gsave } bd
 /GR { grestore } bd
 /GRAY { setgray } bd
-/AXscale { 72 1000 div } bd
+/AXscale { 300 3000 div } bd
 /DOSETUP {
       AXscale dup scale
       1 setlinecap
@@ -840,15 +1955,21 @@ my $titleframe=<<DATA;
 /p12 <0006060000606000> def
 /p13 <ff9f9ffffff9f9ff> def
 /p21 <ff0f0f1ffff0f0f1> def
+
+
 /DEFINEFONTS {
-      /AXFont0p180000 /Helvetica-Bold FINDFONT 38.000 POINTSCALEFONT def
-      /AXFont1p480000 /Courier-Bold FINDFONT 48.000 POINTSCALEFONT def
-      /AXFont1p280000 /Courier-Bold FINDFONT 28.000 POINTSCALEFONT def
-      /AXFont1p180000 /Courier-Bold FINDFONT 18.000 POINTSCALEFONT def
+      /HelveticaLarge /Helvetica-Bold FINDFONT $largefontsize POINTSCALEFONT def
+      /HelveticaMedium /Helvetica-Bold FINDFONT $mediumfontsize POINTSCALEFONT def
+      /HelveticaSmall /Helvetica-Bold FINDFONT $smallfontsize POINTSCALEFONT def
+      /HelveticaVerySmall /Helvetica-Bold FINDFONT $verysmallfontsize POINTSCALEFONT def
 
-
-
+      /CourierLarge /Courier-Bold FINDFONT $largefontsize POINTSCALEFONT def
+      /CourierMedium /Courier-Bold FINDFONT $mediumfontsize POINTSCALEFONT def
+      /CourierSmall /Courier-Bold FINDFONT $smallfontsize POINTSCALEFONT def
+      /CourierVerySmall /Courier-Bold FINDFONT $verysmallfontsize POINTSCALEFONT def
 } def
+
+
 %%EndProlog
 %%BeginSetup
 %%IncludeResource: font Helvetica
@@ -896,37 +2017,18 @@ ifelse
 %%BeginPageSetup
 save /AXPageSave exch def
 DOSETUP
-3000 DOLANDSCAPE
+$hscale DOLANDSCAPE
 %%EndPageSetup
 
-
-0.1000 0.1000 0.1000 0.0000 SET_CMYK
-AXFont1p480000 SETFONT
+0.9999 0.9960 0.9999 0.0000 SET_CMYK
+CourierLarge SETFONT
 GS
 n
-700 2400 M
-(A Film By:) 3000 X
+$line1xpos $line1ypos M
+($line1text) $line1size X
 GR
 
-0.1000 0.1000 0.1000 0.0000 SET_CMYK
-AXFont1p480000 SETFONT
-GS
-n
-600 1250 M
-(Your Name Here) 4000 X
-GR
-
-
-0.1000 0.2000 0.1000 0.0000 SET_CMYK
-AXFont1p280000 SETFONT
-GS
-n
-600 0 M
-(YYYY-MM-DD) 3000 X
-GR
-
-
-
+$pngdata
 
 %%PageTrailer
 AXPageSave restore

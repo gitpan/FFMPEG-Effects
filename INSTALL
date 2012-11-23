@@ -1,5 +1,4 @@
-
-Built Against:
+Built and Tested With:
 FFMPEG-HEAD-665132e.tgz
 
 With:
@@ -7,9 +6,9 @@ With:
 
 
 These Files:
-libavformat/Makefile
+libavfilter/Makefile
 and 
-libformat/allfilters.c
+libavfilter/allfilters.c
 
 Were Modified to inlude the "vsrc_movie" filter
 

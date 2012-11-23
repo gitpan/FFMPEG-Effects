@@ -8,6 +8,7 @@ t/manifest.t
 t/pod-coverage.t
 t/pod.t
 titlescr.pl
-FFMPEG-HEAD-665132e.tgz
+ffmpeg-HEAD-665132e.FFMPEG-Effects.tgz
 INSTALL
 META.yml                                 Module meta-data (added by MakeMaker)
+META.json                                Module JSON meta-data (added by MakeMaker)
