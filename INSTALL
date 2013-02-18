@@ -1,17 +1,16 @@
-Built and Tested With:
-FFMPEG-HEAD-665132e.tgz
+This Module Is Written Against:
+FFMPEG Branch Release 1.0
 
-With:
-./configure --enable-shared --enable-gpl --enable-version3 --enable-nonfree   --enable-x11grab --enable-runtime-cpudetect --enable-libdc1394  --enable-libfaac --enable-libmp3lame   --enable-libtheora --enable-libvorbis --enable-libx264 --enable-libxvid
+It Must Be Installed And In Your $PATH.
 
-
-These Files:
-libavfilter/Makefile
-and 
-libavfilter/allfilters.c
-
-Were Modified to inlude the "vsrc_movie" filter
+It Also Depends On GhostScript Being
+Installed In Your System.
 
 
-This dist includes a copy of the FFMPEG source it
-was built against
+This Module Uses The Same Number Of
+The Branch Release of FFMPEG That It
+Can Be Used With.
+
+The Internal $REVISION or Release
+Date Will Indicate if You Have The Latest 
+Release of FFMPEG::Effects

@@ -1,5 +1,5 @@
 {
-   "abstract" : "PERL Routines To Generate Titles And Fades With libavfilter",
+   "abstract" : "PERL Routines To Simplify ffmpeg Video Filter Usage.",
    "author" : [
       "Piero Bugoni <PBugoni@cpan.org>"
    ],
@@ -37,5 +37,5 @@
       }
    },
    "release_status" : "stable",
-   "version" : "0.04"
+   "version" : "1.0"
 }

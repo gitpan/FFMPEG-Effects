@@ -15,5 +15,5 @@ WriteMakefile(
         'Test::More' => 0,
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
-    clean               => { FILES => 'FFMPEG-Effects-*' },
+    clean               => { FILES => 'FFMPEG-Effects-* *.mpg *.avi *.h264 *.flv *.png Title.ps' },
 );

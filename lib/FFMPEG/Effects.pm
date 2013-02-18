@@ -1,92 +1,273 @@
 package FFMPEG::Effects;
 
-# use warnings;
-# use strict;
+use warnings;
+use strict;
 use MIME::Base64 ();
 use Data::Dumper;
 
+our $VERSION = '1.0';
+our $REVISION = '1.0';
 
 
 =head1 NAME
 
-FFMPEG::Effects - PERL Routines To Generate Titles And Fades With libavfilter
+FFMPEG::Effects - PERL Routines To Simplify ffmpeg Video Filter Usage.
 
 =head1 VERSION
 
-Version 0.04
-
-=cut
-
-our $VERSION = '0.04';
-
-
+Version 1.0 -- For Use With FFMPEG Release Branch 1.0
 
 =head1 SYNOPSIS
 
 use FFMPEG::Effects;
 
-	my $effect=FFMPEG::Effects->new();
+	my $effect=FFMPEG::Effects->new('debug=1');
 
 	$effect->Help('all');
 
-	$effect->FadeIn('vidfile=short.mpg', 'size=cif', 'framerate=30', 'color=cyan', 'opacity=70', 'fadeinframes=90', 'fadeoutframes=56', 'holdframes=31', 'titleframes=91' );
+	$effect->FadeIn('videofile=short.mpg', 
+			'size=cif', 
+			'framerate=30', 
+			'color=cyan', 
+			'opacity=70', 
+			'fadeinframes=90', 
+			'holdframes=31', 
 
-	$effect->TitleFade('size=cif',  'framerate=30', 'color=black', 'opacity=100', 'fadeinframes=50', 'fadeoutframes=50', 'holdframes=30', 'titleframes=299', 'fontcolor=white', 'font=Courier', 'justify=center' );
+	$effect->TitleSplash('size=cif',
+			'framerate=30', 
+			'color=black', 
+			'opacity=100', 
+			'fadeinframes=50', 
+			'fadeoutframes=50', 
+			'holdframes=30', 
+			'titleframes=299', 
+			'fontcolor=white', 
+			'font=Courier', 
+			'justify=center' );
 
-	$effect->FadeOut('vidfile=short.mpg', 'size=cif', 'framerate=30', 'color=cyan', 'opacity=70', 'fadeinframes=90', 'fadeoutframes=56', 'holdframes=31', 'titleframes=91' );
+	$effect->FadeOut('videofile=short.mpg', 
+			'size=cif', 
+			'framerate=30', 
+			'color=cyan', 
+			'opacity=70', 
+			'fadeoutframes=56', 
+			'holdframes=31', 
 
 
 =head1 USAGE
 
+The Methods Shown Above Are Shown With Their Relevant Arguments.
+They Can Be Called With No Arguments And Will Attempt To Produce Useful Output.
+
+Use This Module As In The Examples Above, Sending A List Of Quoted Arguments
+To Each Function.
+
 Make a Call to Help() To Find Out More.
-
-The Methods Shown Above Are Shown With Their Relevant Arguments
-And Can Be Called With No Arguments And Will Produce Useful Output.
-
-Use This Module As In The Examples Above, Sending An Array Of Quoted Strings
-To Each Function. Enclose String Values For Parameters In Double Quotes, 
-Inside Single-Quoted Expressions.
 
 =head1 DEPENDENCIES
 
-This Module Uses FFMPEG With The libavformat Source Modified
-To Include The "movie" Filter From The SOC Development.
-See The Readme For More Info.
+This Module is Written, and Numbered Against FFMPEG
+Release Branches. e.g.: FFMPEG::Effects-1.0 Is Written For Use
+With FFMPEG Release Branch 1.0.
+
+The Version Number of This Module Will Always Be The Same As
+The FFMPEG Release It Is Written For. Check The $REVISION
+Number or Release Date To Make Sure You Have The Latest Version.
+
+This Module Depends On The GhostScript And ImageMagick
+Programs. They Must Be Installed And In Your $PATH.
+
+=head1 EXPLANATION
+
+All Functions Listed in the USAGE Section Can Be Called Without
+Arguments and Will Attempt To Produce Something Meaningful.
+
+When Particular Arguments To Functions Are Not Relevant 
+They Will Be Ignored. 
+
+If A Particular Value Is Needed And It Is Not Specified
+A Default Value Will Be Used. The Help() Function
+Will List Default Values For Critical Settings.
+
+The TitleSplash() Function Will Create A New Video Based
+on the 'textfile=' argument. If no textfile is specified it
+will create a single color video segmnent with the opacity
+you set, and the pngfile as the background, if any.
+
+The FadeIn() and FadeOut() Methods Operate on A Video
+You Specify. See EXAMPLES Below, For More Info.
+
+The Values for The Arguments Listed Below All Apply
+To The Output Video File, Except 'videofile', and
+'textfile' Which Name Input Files.
+
+=head1 ARGUMENTS
+
+The Methods in FFMPEG::Effects Take The Following Arguments Where Relevant:
+
+	'videofile'      The File Name of The Video File To Be Used As Input
+	'size'           Video Image Size -- Can Use 'cif', etc, or <Width>x<Height>
+	'framerate'      Output File Frame Rate
+	'fadeinframes'   Number of Frames A Fade In Is Spread Over
+	'fadeoutframes'  Number of Frames A Fade Out Is Spread Over
+	'holdframes'     Number Of Frames Added to Beginning or End of Effect To Increase Its Duration
+	'titleframes'    Number of Frames That Title Frame Will Persist
+	'color'          The Fade To And Fade From Color
+	'opacity'        Final Opacity of Fade Sequence
+	'fontcolor'      Text Color Used In Generated Titles
+	'justify'        'Left', 'Center', or 'Right' Justify Text In Generated Titles
+	'textfile'       ASCII Text File Containing The Content For Generating Titles
+	'pngfile'        PNG Image File Used To Underlay Generated Titles
+	'font'           Font For Generated Titles. -- 'Helvetica' or 'Courier'
+
+See SIZES, and COLORS below for specifying sizes and colors.
 
 
-=head1 EXPORT
+=head1 SIZES
 
--- TBD
+FFMPEG::Effects understands the following Size Specs:
+
+	 "sqcif"  "128x96"
+	 "qcif"   "176x144"
+	 "cif"    "352x288"
+	 "4cif"   "704x576"
+	 "16cif"  "1408x1152"
+	 "qqvga"  "160x120"
+	 "qvga"   "320x240"
+	 "vga"    "640x480"
+	 "svga"   "800x600"
+	 "xga"    "1024x768"
+	 "uxga"   "1600x1200"
+	 "qxga"   "2048x1536"
+	 "sxga"   "1280x1024"
+	 "qsxga"  "2560x2048"
+	 "hsxga"  "5120x4096"
+	 "wvga"   "852x480"
+	 "wxga"   "1366x768"
+	 "wsxga"  "1600x1024"
+	 "wuxga"  "1920x1200"
+	 "woxga"  "2560x1600"
+	 "wqsxga" "3200x2048"
+	 "wquxga" "3840x2400"
+	 "whsxga" "6400x4096"
+	 "whuxga" "7680x4800"
+	 "cga"    "320x200"
+	 "ega"    "640x350"
+	 "hd480"  "852x480"
+	 "hd720"  "1280x720"
+
+ Size Can Be Specified either by common name, or
+ by "<Width>x<Height>", as above.
+
+ This Module Has been repeatedly tested  with the sizes above up to
+ 1920x1200.
+
+
+=head1 COLORS
+
+Colors are case-insensitive, specified by common name as below:
+
+	'red' 'blue' 'green' 'cyan' 'magenta' 'yellow' 'white' 'grey' 'black'
+	
+The 'color' argument to methods can be specied as above or
+as a Hexadecimal Value like '#RRGGBB' For Red Green And Blue.
+
+The 'fontcolor' Argument is specified by color name as above.
+
+
+=head1 CAVEATS
+
+1) Unfortunately This Module Nneeds To Convert Videos
+To PNG Files To Do Some Of Its Effects. This Can Be 
+Slow For Larger Image Sizes.
+
+2) Likewise, This Module Currently Outputs Only .mpg 
+Container Format. In FFMPEG This Is The 'mpeg1video' Video Format.
+It Will By Convention Transcode Whatever Input Format to 
+mpeg1video Output.
+
+3) The Duration Of The Video Is A Necessary Parameter.
+If The Internal Timecode of A File Is Broken, The Duration Can 
+Not Be Obtained Correctly. Using A Video File As Input 
+That Was Concatenated Together From Multiple Files Can
+Cause This Problem. For Best Results, Use Single MPEG Video
+Files That Were Generated With FFMPEG.
+
+4) Audio Is Not Supported At This Time. FFMPEG::Effects
+produces a new video, so the audio from your original
+can be added to it after the fact.
+
+
+=head1 HINTS
+
+1) Small Image Sizes Are Processed VERY Fast. Larger
+Ones Become Considerably Slower. Try Prototyping Your
+Scenes With Thumbnail Sizes, And When You Have It To
+Your Liking, Render It Full-Size. Then You Will Have Time
+For Coffee.
+
+2) This Module Uses an Auto-Scaling Algorithm Based on
+the Number of Lines, and The Longest Line in the 
+'textfile', to Adjust The Font Size In The Video.
+
+3) This Module Was Designed For Working With A Video 
+Split Up Into Separate Comparatively Short Scenes.
+It Is Intended To Be A Useful Tool For Scripting 
+Routine Effects Like Titles And Fades.
+
+4) Beacause of The Complexities Involved In Being Able To 
+Specify Video Time In Seconds, This Module Always Deals
+With Effects On A Frame-by-Frame Basis.
+
+
+=head1 EXAMPLES
+
+This Module Ships With The Following Simple Example Scripts:
+
+	FFMPEG-Effects.titlesplash.pl
+	FFMPEG-Effects.help.pl
+	FFMPEG-Effects.fadeout.pl
+	FFMPEG-Effects.fadein.pl
+
 
 =head1 SUBROUTINES/METHODS
 
+This Module Has The Following Methods Available:
 
-=head2 new()  Instantiate
+	new()  Instantiate The Class, and Set Debug Level.
 
-=cut
+	Help() Print Help.
+
+	SetParams()  Set Necessary Parameters To Operate.
+
+	FadeIn()  Fade In From Solid Or Transparent Color To Scene.
+
+	FadeOut()  Fade Out From Scene To Solid Or Transparent Color.
+
+	GetDuration()  Get Duration Seconds Of Video.
+
+	GetStreamInfo()  Get Various Stream Parameters.
+
+	TitleSplash()  Generate A Title From PostScript With Fade In And Out.
+
+	PSTitleFrame() Returns PostScript Title Frame Template.
+
+=cut 
 
 
-my $DurationData="";
-
-my $fadefactor=1;
-my $i=0;
-
-my @ProcDataArray="";
 my $ProcData="";
-
-my $VideoData="";
-my @VideoDataArray="";
-
-my @StreamInfo="";
-my @Params="";
+my $FFCommand="";
 
 sub new
 {
-	my( $class, $debug ) = @_;
+	my( $class, $debugsetting ) = @_;
+	my $debug = 0;
 
-	# Set To Useful Values If Not Passed In.
+	# Set Useful Values For Those Not Passed In At Runtime
+	# And For Internal Variables.
 	my $self = { 
-				'vidfile' => 'new-video.mpg',
+				'videofile' => 'FFMPEG-Effect',
+				'outputfile' => 'FFMPEG-Effect',
 				'size' => '352x288',
 				'framerate' => '30',
 				'fadeinframes' => '75',
@@ -100,31 +281,43 @@ sub new
 				'DurationSecs' => '30',
 				'aspect' => 'NA',
 				'pngfile' => 'none',
+				'textfile' => 'FFMPEG-Effect',
 				'justify' => 'center',
 				'font' => 'Courier',
 				'fontsize' => 'not-set',
 				'fontcolor' => 'white',
+				'debug' => $debug,
 				};
 
-	if ( $debug )
+	if ( $debugsetting )
 	{
-		$self->{'debug'} = eval("\$".$debug);
+		eval("\$".$debugsetting);
+		$self->{'debug'} = $debug;
+
+		##### $debugsetting is a string like: 'debug=xxx'
+		##### Where 'xxx' can be an integer val, or string description.
+
+		if ($self->{'debug'} != 0)
+		{
+			print("\n");
+			print ("new: $debugsetting \n");
+			print Dumper($self) . "\n";
+		}
 	}
 
-	return bless( $self, $class);
+	bless $self, $class;
 
+	return ($self);
 }
 
-=head2 Help() Print Help 
 
-=cut
-
+##### Help() Print Help 
 sub Help
 {
 	my ( $self, @inputargs) = @_;
 
 	my $helphash = { 
-					'vidfile' => 'The File Name of The Video File To Be Used As Input Or For Output',
+					'videofile' => 'The File Name of The Video File To Be Used As Input',
 					'size' => 'Video Image Size -- Can Use \'cif\', etc, or \'<width>x<height>\' ',
 					'framerate' => 'Output File Frame Rate',
 					'fadeinframes' => 'Number of Frames A \'Fade In\' Is Spread Over',
@@ -139,7 +332,9 @@ sub Help
 					'DurationSecs' => 'Total Duration Of Video In Seconds',
 					'fontcolor' => 'Text Color Used In Generated Titles',
 					'justify' => 'Left, Center, or Right Justify Text In Generated Titles',
-					'pngfile' => 'PNG Image File Used To Underlay Generated Titles'
+					'textfile' => 'ASCII Text File Containing The Content For Generating Titles',
+					'pngfile' => 'PNG Image File Used To Underlay Generated Titles',
+					'font' => 'Font For Generated Titles. -- \'Helvetica\' or \'Courier\''
 					};
 
 
@@ -176,7 +371,7 @@ sub Help
 		}
 	}
 
-	while( my ($key, $value ) = each(%$inputargs) ) 
+	while( my ($key, $value ) = each(@inputargs) ) 
 	{
  		print($value, "\n");
  		print($helphash->{$key}, "\n");
@@ -184,20 +379,24 @@ sub Help
 
 }
 
-=head2 TestReel()  Generate Test Reel
+##### TestReel()  Generate Test Reel.
 
-=cut
 
 sub TestReel
 {
 	my ( $self, $inputargs) = @_;
-	print Dumper($self);
+	$self->SetParams($inputargs);
+
+	if ($self->{'debug'} != 0)
+	{
+		print("TestReel:\n");
+		print Dumper($self) . "\n";
+	}
 }
 
 
-=head2 SetParams()  Set Necessary Parameters To Operate.
-		Called By Effects Functions To Store Input Arguments
-=cut
+##### SetParams()  Set Necessary Parameters To Operate.
+##### Called By Effects Functions To Store Input Arguments
 
 
 sub SetParams 
@@ -205,7 +404,11 @@ sub SetParams
 
 	my ( $self, @inputargs) = @_;
 	my $data="";
-	# print Dumper($self);
+	if ($self->{'debug'} != 0)
+	{
+		print("SetParams:\n");
+		print Dumper($self) . "\n";
+	}
 	
 	foreach (@inputargs)
 	{
@@ -267,9 +470,9 @@ sub SetParams
 	$self->{ 'width' } = $width;
 	$self->{ 'height' } = $height;
 
-	my $foo  =  ($width / $height);
+	my $aspect  =  ($width / $height);
 
-	my  $aspectratio = sprintf("%.2f", $foo);
+	my  $aspectratio = sprintf("%.2f", $aspect);
 
 	if (  $aspectratio == 1.78 )
 	{
@@ -291,74 +494,102 @@ sub SetParams
 		$self->{ 'aspect' } = 'OTHER';
 	}
 
-
 	$self->{ 'prec1' } = length( $self->{ 'fadeinframes' } );
 	$self->{ 'prec2' } = length( $self->{ 'fadeoutframes' });
 	
-	# print Dumper($self);
-	# die $aspectratio;
 	
 	return();
 }
 
-=head2 FadeIn()  Fade In From Solid Or Transparent Color To Scene.
+##### FadeIn()  Fade In From Solid Or Transparent Color To Scene.
 
-=cut
 
 sub FadeIn  
 {
 
-$self->SetParams(@_);
+	my ( $self, @inputargs) = @_;
+	$self->SetParams(@inputargs);
 
-$vidfile=$self->{'vidfile'};
-$size=$self->{'size'};
-$framerate=$self->{'framerate'};
-$fadeinframes=$self->{'fadeinframes'};
-$fadeoutframes=$self->{'fadeoutframes'};
-$holdframes=$self->{'holdframes'};
-$titleframes=$self->{'titleframes'};
-$color=$self->{'color'};
-$opacity=$self->{'opacity'};
-$width=$self->{'width'};
-$height=$self->{'height'};
-$DurationSecs=$self->{'DurationSecs'};
-$prec1=$self->{'prec1'};
-$prec2=$self->{'prec2'};
-$aspect=$self->{'aspect'};
-
-
-# print("remaining values of \@Params from SetParams() = @Params\n");
-
-
-my $frameno=0;
-my $fade=($opacity / 100);
-my $fadefactor=( ($fade / $fadeinframes) );
-
-system("rm -f $vidfile-front.mpg"); 
-
-
-my $skipsecs=0;
-print("skipsecs: $skipsecs\n");
-my $skip=sprintf("%.2f", $skipsecs);
-my $next=( 1 / $framerate);
-print("skip: $skip\n");
-print("nextval: $next\n");
-
-
-	for ( $frameno = 1; $frameno <= $holdframes; $frameno++)
+	if ($self->{'debug'} != 0)
 	{
-		$ProcData=`ffmpeg -y -qmin 1 -qmax 1 -g 0 -i $vidfile -r $framerate -vf "color=$color\@$fade:$size [layer1]; [in][layer1] overlay=0:0" -s $size -qmin 1 -qmax 1 -g 0 -vframes 1 hold-$frameno.mpg  2>&1`;
-		print $ProcData;
-
-		system("cat hold-$frameno.mpg >> $vidfile-front.mpg"); 
-
+		print("FadeIn:\n");
+		print Dumper($self) . "\n";
 	}
 
+	my $videofile=$self->{'videofile'};
+	my $outputfile = `basename "$videofile" 2>&1`;
+	chomp($outputfile);
+
+	my $size=$self->{'size'};
+	my $framerate=$self->{'framerate'};
+	my $fadeinframes=$self->{'fadeinframes'};
+	my $fadeoutframes=$self->{'fadeoutframes'};
+	my $holdframes=$self->{'holdframes'};
+	my $titleframes=$self->{'titleframes'};
+	my $color=$self->{'color'};
+	my $opacity=$self->{'opacity'};
+	my $width=$self->{'width'};
+	my $height=$self->{'height'};
+	my $DurationSecs=$self->{'DurationSecs'};
+	my $prec1=$self->{'prec1'};
+	my $prec2=$self->{'prec2'};
+	my $aspect=$self->{'aspect'};
+
+	my $frameno=0;
+	my $fade=($opacity / 100);
+	my $fadefactor=( ($fade / $fadeinframes) );
+	my $fadeval=sprintf("%.2f", $fade);
+
+	my $skipsecs=0;
+	my $skip=sprintf("%.2f", $skipsecs);
+	my $next=( 1 / $framerate);
+
+	my $nextval=sprintf("%.3f", $next);
+	if ($self->{'debug'} != 0)
+	{
+		print("Skip Seconds: $skip\n");
+		print("Next Frame At: $nextval sec.\n\n");
+	}
+
+	my $frameindex = $frameno;
+
+	print ("Generating $holdframes Hold Frames...\n");
+	for ( $frameno = 1; $frameno <= $holdframes; $frameno++)
+	{
+		$frameindex = $frameno;
+		my $framecount=sprintf("%05d", $frameindex);
+
+		$FFCommand="ffmpeg -y -qmin 1 -qmax 2 -g 0 -i $videofile -r $framerate -s $size -qmin 1 -qmax 2 -g 0 -vframes 1 $outputfile-holdframe-$framecount.png  2>&1";
+		$ProcData=`$FFCommand`;
+		if ($self->{'debug'} != 0)
+		{
+			print ("Executing: $FFCommand\n");
+			print ("$ProcData\n");
+		}
+	}
+
+		$FFCommand="ffmpeg -y -qmin 1 -qmax 2 -g 0 -i $outputfile-holdframe-%05d.png -r $framerate -qmin 1 -qmax 2 -g 0 -vf \"color=color=$color\@$fade:size=$size [layer1]; [in][layer1] overlay=0:0\" $outputfile-hold.mpg 2>&1";
+		$ProcData=`$FFCommand`;
+		if ($self->{'debug'} != 0)
+		{
+			print ("Executing: $FFCommand\n");
+			print ("$ProcData\n");
+		}
+
+		$FFCommand="ffmpeg -y -qmin 1 -qmax 2 -g 0 -i $videofile -r $framerate -s $size -qmin 1 -qmax 2 -g 0 -vframes $fadeinframes $outputfile-%05d.png  2>&1";
+		$ProcData=`$FFCommand`;
+		if ($self->{'debug'} != 0)
+		{
+			print ("Executing: $FFCommand\n");
+			print ("$ProcData\n");
+		}
+
+	print ("Generating FadeIn Frames...\n");
 	for ( $frameno = 1; $frameno <= $fadeinframes; $frameno++)
 	{
+		my $framecount=sprintf("%05d", $frameno);
 		$frameno=sprintf("%0"."$prec2"."d", "$frameno");
-		print("Frame No $frameno\n");
-
+		print("Frame No: $frameno\n");
 
 		$fade=($fade - $fadefactor);
 
@@ -367,89 +598,144 @@ print("nextval: $next\n");
 			$fade=0;
 		}
 
-		print("Opacity: $fade\n");
+		$fadeval=sprintf("%.2f", $fade);
+		print("Opacity: $fadeval\n");
 		$skip=( $skip + $next );
-		print("Next: $skip\n\n");
+		$nextval=sprintf("%.3f", $skip);
+		print("Next Frame at: $nextval sec.\n\n");
 
-
-		$ProcData=`ffmpeg -y -qmin 1 -qmax 1 -g 0 -ss $skip -i $vidfile -r $framerate -vf "color=$color\@$fade:$size [layer1]; [in][layer1] overlay=0:0" -s $size -qmin 1 -qmax 1 -g 0 -vframes 1 $vidfile-$frameno.mpg  2>&1`;
-
-		system("cat $vidfile-$frameno.mpg >> $vidfile-front.mpg"); 
+		$FFCommand="ffmpeg -y -qmin 1 -qmax 2 -g 0 -i $outputfile-$framecount.png -r $framerate -vf \"color=color=$color\@$fade:size=$size [layer1]; [in][layer1] overlay=0:0\" -s $size -qmin 1 -qmax 2 -g 0 -vframes 1 $outputfile-$framecount.effect.png  2>&1";
+		$ProcData=`$FFCommand`;
+		if ($self->{'debug'} != 0)
+		{
+			print ("Executing: $FFCommand\n");
+			print ("$ProcData\n");
+		}
 	}
 
+	print ("Processing Effect Into Output Video: $outputfile-fadein.mpg\n");
+	$FFCommand="ffmpeg -y -qmin 1 -qmax 2 -g 0 -i $outputfile-%05d.effect.png -r $framerate -qmin 1 -qmax 2 -g 0 $outputfile-effect.mpg  2>&1";
+	$ProcData=`$FFCommand`;
+	if ($self->{'debug'} != 0)
+	{
+		print ("Executing: $FFCommand\n");
+		print ("$ProcData\n");
+	}
 
-$ProcData=`ffmpeg -y -qmin 1 -qmax 1 -g 0 -ss $skip -i $vidfile -r $framerate -s $size -qmin 1 -qmax 1 -g 0 $vidfile-back.mpg  2>&1`;
+	$FFCommand="ffmpeg -y -qmin 1 -qmax 2 -g 0 -ss $skip -i $videofile -r $framerate -s $size -qmin 1 -qmax 2 -g 0 $outputfile-remainder.mpg  2>&1";
+	$ProcData=`$FFCommand`;
+	if ($self->{'debug'} != 0)
+	{
+		print ("Executing: $FFCommand\n");
+		print ("$ProcData\n");
+	}
 
-system("cat $vidfile-back.mpg >> $vidfile-front.mpg"); 
-system("mv $vidfile-front.mpg fadein.mpg"); 
+	$FFCommand="ffmpeg -y -g 0 -qmin 1 -qmax 2 -r $framerate -i \"concat:$outputfile-hold.mpg|$outputfile-effect.mpg|$outputfile-remainder.mpg\" -g 0 -qmin 1 -qmax 2 -r $framerate -s $size $outputfile-fadein.mpg 2>&1";
+	$ProcData=`$FFCommand`;
+	if ($self->{'debug'} != 0)
+	{
+		print ("Executing: $FFCommand\n");
+		print ("$ProcData\n");
+	}
 
-system("rm -f $vidfile-*.mpg hold-*.mpg"); 
+	unless ($self->{'debug'} != 0)
+	{
+		$ProcData=`rm $outputfile-holdframe-?????.png  $outputfile-hold.mpg $outputfile-?????.png $outputfile-?????.effect.png $outputfile-effect.mpg $outputfile-remainder.mpg`;
 
-system("mv fadein.mpg $vidfile-fadein.mpg  "); 
+	}
 
-return @ProcDataArray;
+	$self->{'outputfile'} = "$outputfile-fadein.mpg";
+
+	return;
 }
 
 
-=head2 FadeOut()  Fade Out From Scene To Solid Or Transparent Color.
+##### FadeOut()  Fade Out From Scene To Solid Or Transparent Color.
 
-=cut
 
 sub FadeOut
 {
+	my ( $self, @inputargs) = @_;
+	$self->SetParams(@inputargs);
 
-$self->SetParams(@_);
+	if ($self->{'debug'} != 0)
+	{
+		print("FadeOut:\n");
+		print Dumper($self) . "\n";
+	}
 
-$vidfile=$self->{'vidfile'};
-$size=$self->{'size'};
-$framerate=$self->{'framerate'};
-$fadeinframes=$self->{'fadeinframes'};
-$fadeoutframes=$self->{'fadeoutframes'};
-$holdframes=$self->{'holdframes'};
-$titleframes=$self->{'titleframes'};
-$color=$self->{'color'};
-$opacity=$self->{'opacity'};
-$width=$self->{'width'};
-$height=$self->{'height'};
-$DurationSecs=$self->{'DurationSecs'};
-$prec1=$self->{'prec1'};
-$prec2=$self->{'prec2'};
-$aspect=$self->{'aspect'};
+	my $videofile=$self->{'videofile'};
+	my $outputfile = `basename "$videofile" 2>&1`;
+	chomp($outputfile);
+	
+	my $size=$self->{'size'};
+	my $framerate=$self->{'framerate'};
+	my $fadeinframes=$self->{'fadeinframes'};
+	my $fadeoutframes=$self->{'fadeoutframes'};
+	my $holdframes=$self->{'holdframes'};
+	my $titleframes=$self->{'titleframes'};
+	my $color=$self->{'color'};
+	my $opacity=$self->{'opacity'};
+	my $width=$self->{'width'};
+	my $height=$self->{'height'};
+	my $DurationSecs=$self->{'DurationSecs'};
+	my $prec1=$self->{'prec1'};
+	my $prec2=$self->{'prec2'};
+	my $aspect=$self->{'aspect'};
+
+	$self->GetDuration();
+	$DurationSecs=$self->{'DurationSecs'};
+	
+	my $frameno=0;
+	my $fade=0;
+	my $fadefactor=( ( ( $opacity / 100 ) / $fadeoutframes) );
+	my $fadeval=sprintf("%.2f", $fade);
+	
+	
+	my $skipsecs=(  (($framerate * $DurationSecs ) - $fadeoutframes) / $framerate  );
+	my $skip=sprintf("%.2f", $skipsecs);
+	my $next=( 1 / $framerate);
+	my $nextval=sprintf("%.3f", $skipsecs);
+
+	my $lastframetime=($skip - $next);
+	my $holdframe="";
 
 
-# print("remaining values of \@Params from SetParams() = @Params\n");
+	my $frontframes=($framerate * $skipsecs);
+	my $front=sprintf("%d", $frontframes);
 
-GetDuration($vidfile);
-print("duration $DurationSecs\n");
-# GetStreamInfo($vidfile);
-# print("rate $framerate\n");
+	print ("Preparing Input File...\n");
+	print("Duration: $DurationSecs sec.\n");
+	$FFCommand="ffmpeg -y -qmin 1 -qmax 2 -g 0 -i $videofile -r $framerate -s $size -g 0 -qmin 1 -qmax 2 -aspect:v $width:$height $outputfile-tmp.mpg  2>&1";
+	$ProcData=`$FFCommand`;
+	if ($self->{'debug'} != 0)
+	{
+		print ("Executing: $FFCommand\n");
+		print ("$ProcData\n");
+	}
 
-my $frameno=0;
-my $fade=0;
-my $fadefactor=( ( ( $opacity / 100 ) / $fadeoutframes) );
+	print ("Extracting Pre-Effect Frames...\n");
+	$FFCommand="ffmpeg -y -qmin 1 -qmax 2 -g 0 -i $outputfile-tmp.mpg -r $framerate -s $size -vframes $front -g 0 -qmin 1 -qmax 2 $outputfile-front.mpg  2>&1";
+	$ProcData=`$FFCommand`;
+	if ($self->{'debug'} != 0)
+	{
+		print ("Executing: $FFCommand\n");
+		print ("$ProcData\n");
+	}
 
+	print("Skipping To: $skip sec.\n");
+	print ("Generating Frames For FadeOut Effect...\n");
 
-my $skipsecs=(  (($framerate * $DurationSecs ) - $fadeoutframes) / $framerate  );
-print("skipsecs: $skipsecs\n");
-my $skip=sprintf("%.2f", $skipsecs);
-my $next=( 1 / $framerate);
-print("skip: $skip\n");
-print("nextval: $next\n");
-my $lastframetime=($skip - $next);
-my $holdframe="";
-
-
-my $frontframes=($framerate * $skipsecs);
-my $front=sprintf("%d", $frontframes);
-
-$ProcData=`ffmpeg -y -qmin 1 -qmax 1 -g 0 -i $vidfile -r $framerate -s $size -g 0 $vidfile-tmp.mpg  2>&1`;
-$ProcData=`ffmpeg -y -qmin 1 -qmax 1 -g 0 -i $vidfile -r $framerate -s $size -vframes $front $vidfile-front.mpg  2>&1`;
-print $ProcData;
+	my 	$frameindex = $frameno;
+	my $framecount=sprintf("%05d", $frameindex);
 
 	for ( $frameno = 1; $frameno <= $fadeoutframes; $frameno++)
 	{
 		$frameno=sprintf("%0"."$prec2"."d", "$frameno");
 		print("Frame No $frameno\n");
+
+		$frameindex = $frameno;
+		$framecount=sprintf("%05d", $frameindex);
 
 		$fade=($fade + $fadefactor);
 
@@ -458,63 +744,126 @@ print $ProcData;
 		{
 			$fade=($opacity / 100 );
 
+			print ("Generating Hold Frames... This Frame Repeated $holdframes Times.\n");
 			for ( $holdframe = 1; $holdframe <= $holdframes; $holdframe++)
 			{
-				$ProcData=`ffmpeg -y -qmin 1 -qmax 1 -g 0 -ss $skip -i $vidfile-tmp.mpg -r $framerate -vf "color=$color\@$fade:$size [layer1]; [in][layer1] overlay=0:0" -s $size -qmin 1 -qmax 1 -g 0 -vframes 1 hold-$frameno.mpg  2>&1`;
-				print $ProcData;
-				system("cat hold-$frameno.mpg >> $vidfile-front.mpg"); 
+				$frameindex = $holdframe;
+				$framecount=sprintf("%05d", $frameindex);
+				$FFCommand="ffmpeg -y -qmin 1 -qmax 2 -g 0 -ss $skip -i $outputfile-tmp.mpg -r $framerate -vf \"color=color=$color\@$fade:size=$size [layer1]; [in][layer1] overlay=0:0\" -s $size -qmin 1 -qmax 2 -g 0 -vframes 1 $outputfile-holdframe-$framecount.png  2>&1";
+				$ProcData=`$FFCommand`;
+				if ($self->{'debug'} != 0)
+				{
+					print ("Executing: $FFCommand\n");
+					print ("$ProcData\n");
+				}
+
 			}
+		next;
 
 		}
 
-		print("Opacity: $fade\n");
+		$fadeval=sprintf("%.2f", $fade);
+		print("Opacity: $fadeval\n");
 		$skip=( $skip + $next );
-		print("Next: $skip\n\n");
+		$nextval=sprintf("%.3f", $skip);
+		print("Next Frame At: $nextval\n\n");
 
 
-		$ProcData=`ffmpeg -y -qmin 1 -qmax 1 -g 0 -ss $skip -i $vidfile-tmp.mpg -r $framerate -vf "color=$color\@$fade:$size [layer1]; [in][layer1] overlay=0:0" -s $size -qmin 1 -qmax 1 -g 0 -vframes 1 $vidfile-$frameno.mpg  2>&1`;
-		# print $ProcData;
-
-		system("cat $vidfile-$frameno.mpg >> $vidfile-front.mpg"); 
+		$FFCommand="ffmpeg -y -qmin 1 -qmax 2 -g 0 -ss $skip -i $outputfile-tmp.mpg -r $framerate -vf \"color=color=$color\@$fade:size=$size [layer1]; [in][layer1] overlay=0:0\" -s $size -qmin 1 -qmax 2 -g 0 -vframes 1 $outputfile-effect-$framecount.png  2>&1";
+		$ProcData=`$FFCommand`;
+		if ($self->{'debug'} != 0)
+		{
+			print ("Executing: $FFCommand\n");
+			print ("$ProcData\n");
+		}
 
 	}
 
+	print ("Transcoding To Output File...  $outputfile-fadeout.mpg\n");
+	$FFCommand="ffmpeg -y -qmin 1 -qmax 2 -g 0 -i $outputfile-effect-%05d.png -r $framerate -s $size -qmin 1 -qmax 2 -g 0 $outputfile-effect.mpg  2>&1";
+	$ProcData=`$FFCommand`;
+	if ($self->{'debug'} != 0)
+	{
+		print ("Executing: $FFCommand\n");
+		print ("$ProcData\n");
+	}
 
-system("mv $vidfile-front.mpg fadeout.mpg"); 
-system("rm -f $vidfile-*.mpg hold-*.mpg"); 
-system("mv fadeout.mpg   $vidfile-fadeout.mpg"); 
-return @ProcDataArray;
+	$FFCommand="ffmpeg -y -qmin 1 -qmax 2 -g 0 -i $outputfile-holdframe-%05d.png -r $framerate -s $size -qmin 1 -qmax 2 -g 0 $outputfile-hold.mpg  2>&1";
+	$ProcData=`$FFCommand`;
+	if ($self->{'debug'} != 0)
+	{
+		print ("Executing: $FFCommand\n");
+		print ("$ProcData\n");
+	}
+
+	$FFCommand="ffmpeg -y -g 0 -qmin 1 -qmax 2 -r $framerate -i \"concat:$outputfile-front.mpg|$outputfile-effect.mpg|$outputfile-hold.mpg\" -g 0 -qmin 1 -qmax 2 -r $framerate -s $size $outputfile-fadeout.mpg 2>&1";
+	$ProcData=`$FFCommand`;
+	if ($self->{'debug'} != 0)
+	{
+		print ("Executing: $FFCommand\n");
+		print ("$ProcData\n");
+	}
+
+	unless ($self->{'debug'} != 0)
+	{
+		$ProcData=`rm $outputfile-holdframe-?????.png  $outputfile-hold.mpg $outputfile-tmp.mpg $outputfile-effect-?????.png $outputfile-effect.mpg $outputfile-front.mpg`;
+	}
+
+	$self->{'outputfile'} = "$outputfile-fadeout.mpg";
+	return;
 }
 
 
-=head2 Transition()  Transition Between Scenes. TBD
+##### Transition()  Transition Between Scenes. TBD
 
-=cut
 
 sub Transition
 {
+	my ( $self, @inputargs) = @_;
+	$self->SetParams(@inputargs);
+
+	if ($self->{'debug'} != 0)
+	{
+		print("Transition");
+		print Dumper($self) . "\n";
+	}
 }
 
 
-=head2 GetDuration()  Get Duration Seconds Of Video.
+##### GetDuration()  Get Duration Seconds Of Video.
 
-=cut
 
 sub GetDuration
 {
 
-$vidfile=$self->{'vidfile'};
+	my ( $self, @inputargs) = @_;
+	$self->SetParams(@inputargs);
 
-## Stream Whole File
-# my $VideoData=`ffmpeg  -i $vidfile -f null /dev/null 2>&1`;
-## Summary Only 
-my $VideoData=`ffmpeg  -i $vidfile  2>&1`;
- 
-$VideoData =~ s/\r/\n/g;
-$VideoData =~ s/\n */\n/g;
-my @VideoDataArray=split("\n", $VideoData);
+	if ($self->{'debug'} != 0)
+	{
+		print("GetDuration:\n");
+		print Dumper($self) . "\n";
+	}
+	
+	my $videofile=$self->{'videofile'};
+	
+	## Stream Whole File
+	# my $VideoData=`ffmpeg  -i $videofile -f null /dev/null 2>&1`;
 
-	foreach $i (0..$#VideoDataArray)
+	## Summary Only 
+	my $VideoData=`ffmpeg  -i $videofile  2>&1`;
+
+	if ($self->{'debug'} != 0)
+	{
+		print $VideoData;
+	}
+	 
+	$VideoData =~ s/\r/\n/g;
+	$VideoData =~ s/\n */\n/g;
+	my @VideoDataArray=split("\n", $VideoData);
+	my $DurationData;
+
+	foreach my $i (0..$#VideoDataArray)
 	{
 		if ( $VideoDataArray[$i] =~ /Duration/ )
 		{
@@ -523,51 +872,70 @@ my @VideoDataArray=split("\n", $VideoData);
 
 	}
 
-print("DurationData--->  $DurationData \n");
+	if ($self->{'debug'} != 0)
+	{
+		print("DurationData--->  $DurationData \n");
+	}
+	
+	$DurationData =~ s/ //g;
+	my @DurationArray=split(",", $DurationData);
+	
+	my @timearray=split(":", $DurationArray[0]);
+	my $DurationHMS=$timearray[1] . ":" . $timearray[2] . ":" . $timearray[3];
+	
+	my $DurationSecs=($timearray[1] * 3600) + ($timearray[2] * 60 ) + $timearray[3];
 
-$DurationData =~ s/ //g;
-my @DurationArray=split(",", $DurationData);
-
-my @timearray=split(":", $DurationArray[0]);
-my $DurationHMS=$timearray[1] . ":" . $timearray[2] . ":" . $timearray[3];
-
-$DurationSecs=($timearray[1] * 3600) + ($timearray[2] * 60 ) + $timearray[3];
-
-return($DurationSecs);
+	$self->{'DurationSecs'} = $DurationSecs;
+	
+	return($DurationSecs);
 }
 ### End GetDuration
 
 
-=head2 GetStreamInfo()  Get Various Stream Parameters.
+##### GetStreamInfo()  Get Various Stream Parameters.
 
-=cut
 
 sub GetStreamInfo
 {
+	my ( $self, @inputargs) = @_;
+	$self->SetParams(@inputargs);
 
-$self->SetParams(@_);
-
-$vidfile=$self->{'vidfile'};
-
-my $StreamInfo = {};
-my $ffmpeg = {};
-my $StreamCount = 0;
-
-my $ProcData=`ffmpeg  -i $vidfile  2>&1`;
-$ProcData =~ s/\r/\n/g;
-$ProcData =~ s/\n */\n/g;
-my @ProcDataArray=split("\n", $ProcData);
-
-	foreach $i (0..$#ProcDataArray)
+	if ($self->{'debug'} != 0)
 	{
-			# print("--->> $ProcDataArray[$i]\n");
+		print("GetStreamInfo:\n");
+		print Dumper($self) . "\n";
+	}
+
+
+	my $videofile=$self->{'videofile'};
+	
+	my $StreamInfo = {};
+	my $ffmpeg = {};
+	my $StreamCount = 0;
+	
+	my $ProcData=`ffmpeg  -i $videofile  2>&1`;
+
+	if ($self->{'debug'} != 0)
+	{
+		print ("$ProcData\n");
+	}
+
+
+	$ProcData =~ s/\r/\n/g;
+	$ProcData =~ s/\n */\n/g;
+	my @ProcDataArray=split("\n", $ProcData);
+
+	foreach my $i (0..$#ProcDataArray)
+	{
+		if ($self->{'debug'} != 0)
+		{
+			print("--->> $ProcDataArray[$i]\n");
+		}
 
 		if ( $ProcDataArray[$i] =~ /FFmpeg version/ )
 		{
 			$ProcData=$ProcDataArray[$i];
 			my @ProcArray=split(", ", $ProcData);
-			# print("$ProcArray[0]\n");
-			# print("$ProcArray[1]\n");
 			$ffmpeg->{'version'} = $ProcArray[0];
 			$ffmpeg->{'Copyright'} = $ProcArray[1];
 		}
@@ -576,16 +944,13 @@ my @ProcDataArray=split("\n", $ProcData);
 		{
 			$ProcData=$ProcDataArray[$i];
 			my @ProcArray=$ProcData;
-			# print("$ProcArray[0]\n");
 			$ffmpeg->{'builton'} = $ProcArray[0];
-			# print($StreamInfo->{'builton'}, "\n");
 		}
 
 		if ( $ProcDataArray[$i] =~ /configuration:/ )
 		{
 			$ProcData=$ProcDataArray[$i];
 			my @ProcArray=$ProcData;
-			# print("$ProcArray[0]\n");
 			my @dataline = split(": ", $ProcArray[0]);
 			$ffmpeg->{'configuration'} = $dataline[1];
 		}
@@ -597,7 +962,6 @@ my @ProcDataArray=split("\n", $ProcData);
 			my ( $foo ) = ( $ProcArray[0] =~ m/(^.*?) /);
 			$ProcArray[0] =~ s/(^.*?) /$foo-/;
 			$ProcArray[0] =~ s/ //g;
-			# print("$ProcArray[0]\n");
 			my @libav=split('-', $ProcArray[0]);
 			$ffmpeg->{$libav[0]} = $libav[1];
 		}
@@ -609,7 +973,6 @@ my @ProcDataArray=split("\n", $ProcData);
 			my ( $foo ) = ( $ProcArray[0] =~ m/(^.*?) /);
 			$ProcArray[0] =~ s/(^.*?) /$foo-/;
 			$ProcArray[0] =~ s/ //g;
-			# print("$ProcArray[0]\n");
 			my @libsw=split('-', $ProcArray[0]);
 			$ffmpeg->{$libsw[0]} = $libsw[1];
 		}
@@ -618,9 +981,6 @@ my @ProcDataArray=split("\n", $ProcData);
 		{
 			$ProcData=$ProcDataArray[$i];
 			my @ProcArray=split(", ", $ProcData);
-			# print("$ProcArray[0]\n");
-			# print("$ProcArray[1]\n");
-			# print("$ProcArray[2]\n");
 			$ProcArray[0] =~ s/ //g;
 			$ProcArray[2] =~ s/from //g;
 			$ProcArray[2] =~ s/://g;
@@ -634,9 +994,6 @@ my @ProcDataArray=split("\n", $ProcData);
 			my @dataline = ();
 			$ProcData=$ProcDataArray[$i];
 			my @ProcArray=split(", ", $ProcData);
-			# print("^$ProcArray[0]\n");
-			# print("^^$ProcArray[1]\n");
-			# print("^^^$ProcArray[2]\n");
 
 			@dataline = split(": ", $ProcArray[0]);
 			$StreamInfo->{$dataline[0]} = $dataline[1];
@@ -649,7 +1006,7 @@ my @ProcDataArray=split("\n", $ProcData);
 
 			my @timearray=split(":", $StreamInfo->{'Duration'});
 
-			$DurationSecs=($timearray[0] * 3600) + ($timearray[1] * 60 ) + $timearray[2];
+			my $DurationSecs=($timearray[0] * 3600) + ($timearray[1] * 60 ) + $timearray[2];
 
 			$StreamInfo->{'DurationSecs'} = $DurationSecs;
 		}
@@ -694,919 +1051,143 @@ my @ProcDataArray=split("\n", $ProcData);
 				$StreamCount++;
 			}
 
-			# 	print("^$ProcArray[0]\n");
-			#	print("^^$ProcArray[1]\n");
-			#	print("^^^$ProcArray[2]\n");
-
 		}
 
 	}
 
-	if ($self->{'debug'})
+	if ($self->{'debug'} != 0)
 	{
 		print Dumper($ffmpeg);
 		print Dumper($StreamInfo);
 	}
 
-@StreamInfo=($framerate, $size);
-return(@StreamInfo);
-
-
+	my @StreamInfo=($self->{'framerate'}, $self->{'size'});
+	return(@StreamInfo);
 }
 
 
-=head2 TitleFade()  Generate A Title From PostScript With Fade In And Out.
+##### TitleSplash()  Generate A Title From PostScript With Fade In And Out.
 
-=cut
 
-sub TitleFade 
+sub TitleSplash
 {
 
-	$self->SetParams(@_);
+	my ( $self, @inputargs) = @_;
+	$self->SetParams(@inputargs);
+
+	if ($self->{'debug'} != 0)
+	{
+		print("TitleSplash:\n");
+		print Dumper($self) . "\n";
+	}
 	
-	$vidfile=$self->{'vidfile'};
-	$size=$self->{'size'};
-	$framerate=$self->{'framerate'};
-	$fadeinframes=$self->{'fadeinframes'};
-	$fadeoutframes=$self->{'fadeoutframes'};
-	$holdframes=$self->{'holdframes'};
-	$titleframes=$self->{'titleframes'};
-	$color=$self->{'color'};
-	$opacity=$self->{'opacity'};
-	$width=$self->{'width'};
-	$height=$self->{'height'};
-	$DurationSecs=$self->{'DurationSecs'};
-	$prec1=$self->{'prec1'};
-	$prec2=$self->{'prec2'};
-	$aspect=$self->{'aspect'};
+	my $textfile=$self->{'textfile'};
+	my $outputfile = `basename "$textfile" 2>&1`;
+	chomp($outputfile);
+	$textfile = `echo $textfile`;
+	chomp($textfile);
+
+	if ( ! open(FILE, $textfile) ) 
+	{
+		$self->{'outputfile'} = 'FFMPEG-Effect';
+		$self->{'textfile'} = 'FFMPEG-Effect';
+		$outputfile = $self->{'outputfile'};
+	}
+
+	my $videofile=$self->{'videofile'};
+	my $size=$self->{'size'};
+	my $framerate=$self->{'framerate'};
+	my $fadeinframes=$self->{'fadeinframes'};
+	my $fadeoutframes=$self->{'fadeoutframes'};
+	my $holdframes=$self->{'holdframes'};
+	my $titleframes=$self->{'titleframes'};
+	my $color=$self->{'color'};
+	my $opacity=$self->{'opacity'};
+	my $width=$self->{'width'};
+	my $height=$self->{'height'};
+	my $DurationSecs=$self->{'DurationSecs'};
+	my $prec1=$self->{'prec1'};
+	my $prec2=$self->{'prec2'};
+	my $aspect=$self->{'aspect'};
 	
 	my $gsize = $height . 'x' . $width;
-	
-	# print("remaining values of \@Params from SetParams() = @Params\n");
-	
+
 	my $frameno=0;
 	my $fadefactor=( ($opacity / $fadeinframes) );
 	
 	my $fade=($opacity / 100);
 	
-	system("rm -f $vidfile-front.mpg"); 
-	system("rm -f $vidfile-titlebackground.mpg"); 
+	### Here is where the main difficulty is:
+	### GhostScript seems to be a bit buggy when generating PNG Images.
+	### When a PNG Image is successfully generated, the FFMPEG
+	### Functions usually will work just fine. 
 
-
-
-### Here is where the main difficulty is:
-### GhostScript seems to be a bit buggy when generating PNG Images.
-### When a PNG Image is successfully generated, the FFMPEG
-### Functions usually will work just fine. 
-
-if (  ( ! $self->{'pngfile'} ) || ( $self->{'pngfile'} eq 'none' ) )
+	if (  ( ! $self->{'pngfile'} ) || ( $self->{'pngfile'} eq 'none' ) )
 	{
-		$self->PSTitleFrame();
-		$ProcData=`gs -dBATCH -dNOPAUSE -sDEVICE=pngalpha -g"$gsize" -sOutputFile=title.tmp.png Title.ps`;
-		$ProcData=`convert -rotate 90 title.tmp.png title.png`;
+			$self->PSTitleFrame();
+			$ProcData=`gs -dBATCH -dNOPAUSE -sDEVICE=pngalpha -g"$size" -sOutputFile=title.png Title.ps`;
 	}
-else 
+	else 
  	{
- 		$self->PSTitleFrame();
- 		$ProcData=`gs -dBATCH -dNOPAUSE -sDEVICE=pngalpha -g"$gsize" -sOutputFile=title.tmp.png Title.ps`;
- 		$ProcData=`convert -rotate 90 title.tmp.png title.png`;
- 		$ProcData=`convert $self->{'pngfile'} -resize $self->{'size'}!  pngfile.png`;
- 		$ProcData=`convert pngfile.png title.png -composite -size $gsize composite.png`;
- 		$ProcData=`mv composite.png title.png`;
+ 			$self->PSTitleFrame();
+			$ProcData=`gs -dBATCH -dNOPAUSE -sDEVICE=pngalpha -g"$size" -sOutputFile=title.png Title.ps`;
+ 			$ProcData=`convert $self->{'pngfile'} -resize $self->{'size'}!  pngfile.png`;
+			$ProcData=`convert pngfile.png title.png -composite -size $size composite.png`;
+ 			$ProcData=`mv composite.png title.png`;
  	}
 
-	# $ProcData=`gs -dBATCH -dNOPAUSE -sDEVICE=pngalpha -g288x352 -sOutputFile=title.tmp.png Title.ps`;
-	# $ProcData=`convert RCA_Indian_Head_test_pattern.JPG -scale 352 title.png`;
-	
 	my $skipsecs=0;
-	print("skipsecs: $skipsecs\n");
+	# print("skipsecs: $skipsecs\n");
 	my $skip=sprintf("%.2f", $skipsecs);
 	my $next=( 1 / $framerate);
-	print("skip: $skip\n");
-	print("nextval: $next\n");
+	# print("skip: $skip\n");
+	# print("nextval: $next\n");
 	
+	system("convert -size $size xc:$color $color.png");
 
-	if ( $aspect  eq 'HD')
+	my $runtime = ($titleframes * $next);
+
+	$ProcData=`ffmpeg -y -loop 1 -f image2 -i $color.png -t $runtime $outputfile-titlesplash.background.mpg  2>&1 `;
+	if ($self->{'debug'} != 0)
 	{
-		Clear1600x9001Frame();
+		print ("$ProcData\n");
 	}
 
-	if ( $aspect  eq 'NTSC')
+	$ProcData=`ffmpeg -y -i $outputfile-titlesplash.background.mpg -vf "movie=title.png [title]; [in][title] overlay=0:0" -qmin 1 -qmax 2 -g 0 -s $size  titlesplash.mpg  2>&1 `;
+	if ($self->{'debug'} != 0)
 	{
-		Clear720x4801Frame();
-	}
-	else
-	{
-		Clear1024x7681Frame();
-	}
-	
-	for ( $frameno = 1; $frameno <= $titleframes; $frameno++)
-	{
-		system("cat color-0.mpg >> $vidfile-titlebackground.mpg"); 
+		print ("$ProcData\n");
 	}
 
-	$ProcData=`ffmpeg -y -i $vidfile-titlebackground.mpg -vf "movie=0:png:title.png [title]; [in][title] overlay=0:0" -qmin 1 -qmax 1 -g 0 -s $size  title-out.mpg  `;
-	print("$ProcData\n");
+	$self->FadeIn("videofile=titlesplash.mpg", "size=$size", "framerate=$framerate", "color=$color", "opacity=$opacity", "fadeinframes=$fadeinframes", "fadeoutframes=$fadeoutframes", "holdframes=$holdframes", "titleframes=$titleframes" );
+
+	$self->FadeOut("videofile=titlesplash.mpg-fadein.mpg", "size=$size", "framerate=$framerate", "color=$color", "opacity=$opacity", "fadeinframes=$fadeinframes", "fadeoutframes=$fadeoutframes", "holdframes=$holdframes", "titleframes=$titleframes" );
 
 
-	$self->FadeIn("vidfile=title-out.mpg", "size=$size", "framerate=$framerate", "color=$color", "opacity=$opacity", "fadeinframes=$fadeinframes", "fadeoutframes=$fadeoutframes", "holdframes=$holdframes", "titleframes=$titleframes" );
-
-
-	$self->FadeOut("vidfile=title-out.mpg-fadein.mpg", "size=$size", "framerate=$framerate", "color=$color", "opacity=$opacity", "fadeinframes=$fadeinframes", "fadeoutframes=$fadeoutframes", "holdframes=$holdframes", "titleframes=$titleframes" );
-
-
-	system("mv $vidfile-fadeout.mpg titlefade.mpg"); 
-
-	system("rm -f title-out*"); 
-	return @ProcDataArray;
+	print ("Saving Output As: $outputfile-titlesplash.mpg\n");
+	$ProcData=`cp $self->{'outputfile'} $outputfile-titlesplash.mpg 2>&1`;
+	unless ($self->{'debug'} != 0)
+	{
+		$ProcData=`rm $outputfile-titlesplash.background.mpg $color.png title.png titlesplash.mpg titlesplash.mpg-fadein.mpg titlesplash.mpg-fadein.mpg-fadeout.mpg Title.ps 2>&1`;
+	}
+	return;
 }
 
 
-=head2 Clear1024x7681Frame()  Returns Base64 Encoded 1024x768 MPG 1 Frame.
 
-=cut
+##### PSTitleFrame() Returns PostScript Title Frame Template.
 
-sub Clear1024x7681Frame {
-
-my $clearframe=<<DATA;
-AAABuiEAA0ghwzNnAAABuwAJwzNnACH/4ODmAAAB4AffMQAFvyERAAWnsQAAAbNAAwAV///gGAAA
-AbgACAAAAAABAAAP//gAAAEBC/z/SlIlcpSkTuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSJXKUpE7lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUkSZXKUpOdylKRFylKR
-FylKRFylKRFylKRFylKRFylKRFylKRFylKQzyuUpSIuUpSJ3KUpCUS5tylKRO5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5GFIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIlcpSkTuUpSIuUpSIuUpSIswpSJDRdylKRO5SlIi5SlIi5SlJRcpSkSu
-UpScXKUpE7lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKRiVilKRO5SlI
-i5SlIi5SlJgB+JlcpSkouUpSJ3KUpKLlKUiLlKUnFylKRFylKRFylKRFylKRK5SlIncpSkRcpSkR
-cpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRc
-pSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcp
-SkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkSuUpSJ3KUpEXKUpEXKUpErlKUidylKRFyl
-KRFylKRFylKRFylKRK5SlIncpSkRcpSkRcpSkRcpSkRcpSkSuUpSJ3KUpEXKUpEXKUpEXKUpEXKU
-pEXKUpEXKUpEXKUpOVylKSncpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpS
-kRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSk
-RcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkSuUpSJ3KUpE
-XKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpOLlKUlK5SlIncpSkRcpSkRcpSkRcpSkR
-cpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRc
-pSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcp
-SkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkSuUpSJ3KUpEXKUpEXKUpEXKU
-pErlKUidylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKSlcpSk53KU
-pEWYUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUp
-EXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpE
-XKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEX
-KUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXK
-UpEXKUpKLlKRiVilKTi5SlIncpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcp
-SkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpS
-kRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSk
-RcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkpXKUpO
-dylKRFylKRFylKSlcpSkRcpSk53KUpEXKUpEXKUpEXKUpNgIxcpSkouUpSIuUpSIuUpSIuUAAAHg
-B/oPKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiVylKRO5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIlcpSkTuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpScXKUpK
-LlKUiLlKUiLlKUiLlKUiLlKUnFylKSQiLlIwlK5SlJzuUpSIuUpSJXKUpE7lKUiVylKRO5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlJjAuLlKUlFylKRFylKRFylKRFylKRF
-ylKRFylKRFylKRK5SlIncpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRc
-pSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcp
-SkRcpSkRcpSkRcpSkRcpSkSuUpSJ3KUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKU
-pEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUp
-EXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpE
-XKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEX
-KUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpErlKUidylKRFylKSlcpSk53KUpEXKUpEX
-KUpEXKUpEXKUpEXIwpEXKUpEXIkaFIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlI6gORcpSk8uVylKSncpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSk
-RcpSkSuUpSJ3KUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpE
-XKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEX
-KUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXK
-UpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpErlKUidylKRFylKRFylKRFylKSk+AjcpSkTuUpScXKUp
-EXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpE
-XKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEX
-KUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXK
-UpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKU
-pEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUp
-EXKUpEXKUpEXKUpEXKUpEXKUpEXKUpErlKUidylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKR
-FylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRF
-ylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylI4t4ixSlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIlcpSkRcpSkTuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIgAAAeAH+g/l
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUlFylKTi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIlcpSkouUpScXKUpE7lKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUh8BGLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUlK5SlJkidy
-lKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFyl
-KRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylK
-RFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKR
-FylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRF
-ykyEFoliVylKRO5SlIlcpSkTuUpSJXKUpE7lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiVylKRO5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIlcpSkTuUpSJXKUpE7lKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlIkaESuUpSIuUpSJ3
-KUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXK
-UpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKU
-pEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUp
-EXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpE
-XKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEX
-KUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXK
-UpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKU
-pEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUp
-EXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpE
-XKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEX
-KUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXK
-UpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKU
-pEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpKLlKUnK5SlIncpSkRcpAAAB4Af6D0pEXKUp
-EXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpErlKUidylKRFylKRFylKR
-FylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRF
-ylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFy
-lKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFyl
-KRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylK
-RFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKR
-FylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRF
-ylKSlcpSk53KUpEXKUpEXKRhKVylKTncpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkR
-cpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRc
-pSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcp
-SkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpS
-kRcpSkRcpSkRcpSkRcpSkSuUpSJ3KUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUp
-EXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpE
-XKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEX
-KUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXK
-UpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpNi4uUpSUXKUpEXKUpEXKUpEXKUpEXKUpEX
-KUpErlKUidylKRFylKRFylKRFylKRK5SlIncpSkRcpSkEeVylKRO5SlIi5SlIizClIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIlcpSkTuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSJXKUpE7lKUiLlKUiVylKRO5SlIi5SlIi5SlIi5SlIi5SI1cIlcpSkT
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIs4poUpErlKUidylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFyl
-KRFylKRFylKRFylKRFylKRFylKRFylKRFylKRK5SlIncpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpS
-kRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSk
-RcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkR
-cpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRc
-pSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcp
-SkSuUpSJ3KUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKU
-pEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUp
-EXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpE
-XKUpErlKUidylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRF
-ylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKREAAAHgB/oPcpSkRcpSkRcp
-SkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpS
-kRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSk
-ScXcpSkTuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSJXKUpE7lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiVylKRO5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIlcpSk
-TuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSJXKUpE7lKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiVylKRO5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlJSuUpScXKUpE7lKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUnyWBOVylKSncpSkRcpSkRcpSkRcpSkRcp
-SkRcpSkRcpSkSuUpSJ3KUpEXKUpEXKUpEXKUpEXKUpEXKUpOVylKSncpSkRcpSkRcpSkRcpSkRcp
-SkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpS
-kRcpSkRcpSkSuUpSJ3KUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUp
-EXKUpEXKUpKLlKUnFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKSlcpSk
-53KUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpE
-XKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEX
-KUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXK
-UpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKU
-pEXKUpEXKUpEXKUpEXKUpEXKUpCURcpSkYIlcpSkTuR2hSJXKUpEXKUpE7lKUlK5SlJzuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSaS2lcpSkp3KUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXK
-UpEXKUpEXKUpEXKUpKVylKTncpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcp
-SkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkpXKUpOdylKRFylKTJcrlKUlO
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SgAAAeAFxg9SIuUpSIuUpSIuUpSI
-uUpSJXKUpEXKUpE7lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiVylKRO5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIlcpSkTuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSJXKUpE7lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLMKUiLlKUiLlKUiLlKUiLlKUiVylKRO5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIlcpSkRcpSkTuUpSUrlKUnFylKRO5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIlcpSkTuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-JXKUpE7lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKRlKxSlJvoswpSBouLlKUiLlKUiLlKUjeLlKUi
-dylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRF
-ylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFy
-lKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFyl
-KRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFylKRFykYSlcpSk4uUpSUXKU
-pOdylKRFylKRFylKRFylKRFylKRK5SlIncpSkRcpSkRcpSkSuUpSJ3KUpEXKUpEXKUpEXKUpEXKU
-pEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUpEXKUp
-EXKUpEXKUpEXKUpEXKUpEXKUiRoixSlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SkYixSlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIlcpSkRcpSkTskaFKRIaLuUpScXKUpKdylKRFylKRFylKRFylKRFylKRK5SlIncpSkRcpSkR
-cpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRc
-pSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcp
-SkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSkRcpSLtEWKUpErlKUiLlKUidy
-lKRFylKRFylKRFylKRFylKRFylKRFylKRFylKSlcpSk4uRhGRKnAAAABvgIuD///////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////
-DATA
-
-
-# my $returndata=uudecode($clearframe);
-my $returndata=MIME::Base64::decode($clearframe);
-
-open (OUTFILE,  '>', "color-0.mpg") or  die $!;
-print(OUTFILE $returndata);
-close (OUTFILE);
-
-return($returndata);
-}
-
-=head2 Clear1600x9001Frame()  Returns Base64 Encoded 1600x900 MPG 1 Frame.
-
-=cut
-
-sub Clear1600x9001Frame {
-
-my $clearframe=<<DATA;
-AAABuiEAA0ghwzNnAAABuwAJwzNnACH/4ODmAAAB4AffMQAFvyERAAWnsQAAAbNkA4QV///gGAAA
-AbgACAAAAAABAAAP//gAAAEBC/h9KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUAAAHg
-B/oPIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIgAAAeAH+g8u
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuAAAB4Af6D1KUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlIAAAHgB/oPlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlAAAAeAH+g+IuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIAAAB4Af6D7lKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLkAAAHgB/oPSlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SgAAAeAH+g9SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSAAAB4Af6DyLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiIAAAHgBAwP5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIiAAABvgPoD///////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-/////////////////w==
-DATA
-
-
-# my $returndata=uudecode($clearframe);
-my $returndata=MIME::Base64::decode($clearframe);
-
-open (OUTFILE,  '>', "color-0.mpg") or  die $!;
-print(OUTFILE $returndata);
-close (OUTFILE);
-
-return($returndata);
-}
-
-=head2 Clear720x4801Frame()  Returns Base64 Encoded 1600x900 MPG 1 Frame.
-
-=cut
-
-sub Clear720x4801Frame {
-
-my $clearframe=<<DATA;
-AAABuiEAA0ghwzNnAAABuwAJwzNnACH/4ODmAAAB4AffMQAFvyERAAWnsQAAAbMtAeAV///gGAAA
-AbgACAAAAAABAAAP//gAAAEBC/h9KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKU
-iLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUi
-LlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiL
-lKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLl
-KUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlK
-UiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUiLlKUAAAHg
-B/oPIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi
-5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5
-SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5S
-lIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5Sl
-Ii5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlI
-i5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIi5SlIgAAAeAEHA8u
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSI
-uUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIu
-UpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuU
-pSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUp
-SIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIuUpS
-IuUpSIuUpSIuUpSIuUpSIuUpSIuUpSIgAAABvgPYD///////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////
-DATA
-
-# my $returndata=uudecode($clearframe);
-my $returndata=MIME::Base64::decode($clearframe);
-
-open (OUTFILE,  '>', "color-0.mpg") or  die $!;
-print(OUTFILE $returndata);
-close (OUTFILE);
-
-return($returndata);
-}
-
-=head2 PSTitleFrame() Returns PostScript Title Frame Template.
-
-=cut
 
 sub PSTitleFrame {
+
 	my ( $self, @inputargs) = @_;
+	$self->SetParams(@inputargs);
+
+	if ($self->{'debug'} != 0)
+	{
+		print("PSTitleFrame:\n");
+		print Dumper($self) . "\n";
+	}
 
 	my $height = $self->{'height'};
 	my $width = $self->{'width'};
@@ -1621,6 +1202,7 @@ sub PSTitleFrame {
 	my $mediumfontsize = 28;
 	# my $largefontsize = 43; 
 	# my $autofontsize = 310; 
+	my $fontsize;
 
 	my $cyan = '0.7777';
 	my $magenta = '0.7777';
@@ -1635,11 +1217,12 @@ sub PSTitleFrame {
     my $magentaline = "0.1111 0.7777 0.1111 0.0000 SET_CMYK \n";
     my $yellowline = "0.1111 0.1117 0.7777 0.0000 SET_CMYK \n";
     my $blackline = "0.9999 0.9999 0.9999 0.9999 SET_CMYK \n";
-		my $whiteline = "0.1051 0.1049 0.1051 0.0000 SET_CMYK \n";
+	my $whiteline = "0.1051 0.1049 0.1051 0.0000 SET_CMYK \n";
     my $greyline = "0.1111 0.1111 0.1111 0.5000 SET_CMYK \n";
 
 
 	my $colorline = $redline;
+	my $fontline;
 
 	if ( lc($self->{'fontcolor'})  eq 'red' )
 	{
@@ -1701,26 +1284,32 @@ sub PSTitleFrame {
 	}
 
 
-	my $titletextfile = 'title.txt';
-	# my $filesize = (stat($titletextfile))[7];
-	# print $filesize;
+	my $titletextfile = $self->{'textfile'};
+	$titletextfile = `echo $titletextfile`;
+	chomp($titletextfile);
+	print "Reading Title Content From: $titletextfile\n";
 
-	if ( ! open(FILE, "title.txt") ) 
+	if ( ! open(FILE, $titletextfile) ) 
 	{
-		open(FILE, "+>", "title.txt");
-		print(FILE "This Video\n\nProduced With:\n\nFFMPEG::Effects 0.4\n");
+		$self->{'outputfile'} = 'FFMPEG-Effect';
+		open(FILE, "+>", "$self->{'outputfile'}.titlesplash.txt");
+		print(FILE "This Video\n\nProduced With:\n\nFFMPEG::Effects 1.0\n");
 		close(FILE);
+		$titletextfile = "$self->{'outputfile'}.titlesplash.txt";
 	}
 
-	open(FILE, "title.txt");
+	open(FILE, $titletextfile);
 	my $linecount = scalar(grep{/\n/}<FILE>);
-	print("$linecount \n");
+
+	if ($self->{'debug'} != 0)
+	{
+		print("Line Count in $titletextfile: $linecount \n");
+	}
 
 	my $longestline = 0;
 	seek( FILE, 0, 0);
 	while (<FILE>)
 	{
-		# chomp($_);
 		my $linelength = length($_);
 		if ( $linelength > $longestline )
 		{
@@ -1740,34 +1329,28 @@ sub PSTitleFrame {
 	my $pad = ( $fontsize * 2 );
 
 	my $letterheight = ( ( 6.7 * $fontsize ) * 1 );
-	# my $letterheight = ( ( 8 * $fontsize ) * 1 );
 	my $pct = ( ( $letterheight / $hscale ) * 100 );
 	my $factor =  ( ( ( 98 - $pct )  / 100 )  );
 
 
+	my $linexpos = 0;
 	my $lineypos = ( $hscale  * $factor );
-	# my $yspace = ( $lineypos - ( 1 * $fontsize ) );
 	my $yspace = $lineypos;
 
 	my $largefontsize = $fontsize; 
 
-	# my $linespace =  ( ( $hscale / $linecount ) * 20 );
-	# my $linespace =  ( ( $hscale / $linecount ) * 20 );
-
 	my $pngdata = "\n";
 
+	my $linespace = 0;
 	my $linenumber = 0;
 	my $line1text = 'foo';
 	my $line1size;
 	my $line1ypos = 0;
 	my $line1xpos = 0;
 
-	# open(FILE, "title.txt");
 	seek( FILE, 0, 0);
 	while (<FILE>)
 	{
-			# print ++$a." $_" if /./ <FILE>;
-			# print "$_" if /./;
 			if ( /./ )
 			{
 				$linenumber++;
@@ -1777,7 +1360,6 @@ sub PSTitleFrame {
 					chomp($_);
 					$line1text = $_;
 					my $linecharcount = length($_);
-					# $fontsize = ($fontsize / $linecharcount);
 
 	 				use integer;
 	 					$largefontsize = $fontsize / 1; 
@@ -1816,13 +1398,11 @@ sub PSTitleFrame {
 
 				my $line = chomp($_);
 				my $linecharcount = length($_);
-				# print " $_" ;
-				# print($linecharcount, "\n");
 
 	 			use integer;
 	 				$largefontsize = $fontsize / 1; 
 	 				$fontsize = $fontsize / 1; 
-					$linesize = ( 5 * $fontsize * $linecharcount );
+					my $linesize = ( 5 * $fontsize * $linecharcount );
 	 			no integer;
 
 				if ($justify eq 'left')
@@ -1845,7 +1425,6 @@ sub PSTitleFrame {
 				}
 
 
-				# my $psdata = 	"$cyan $magenta $yellow $black SET_CMYK \n".
 				my $psdata = 	$colorline.
 								"$fontline SETFONT \n".
 								"GS \n".
@@ -1855,20 +1434,15 @@ sub PSTitleFrame {
 								"GR \n".
 								"\n";
 
-								# print $psdata;
 
 				$pngdata =  $pngdata . $psdata;
 
 				$lineypos = ( $lineypos - $linespace );
-				# $lineypos = ( $lineypos  * $factor );
 			}
 			else
 			{ 
 				my $linesize = ( 5 * $fontsize * 1 );
-				# my $whitespace = ( ( $wscale  ) - ( $linesize ) );
-				# my $linexpos = ( $whitespace / 2 );
 
-				# my $psdata = 	"$cyan $magenta $yellow $black SET_CMYK \n".
 				my $psdata = 	$colorline.
 								"$fontline SETFONT \n".
 								"GS \n".
@@ -1878,8 +1452,6 @@ sub PSTitleFrame {
 								"GR \n".
 								"\n";
 
-								# print $psdata;
-
 				$pngdata =  $pngdata . $psdata;
 
 				$lineypos = ( $lineypos - $linespace );
@@ -1888,13 +1460,12 @@ sub PSTitleFrame {
 	}
 
 	close(FILE);
-	print $pngdata;
-	# no integer;
+
 
 
 my $titleframe=<<DATA;
 %!PS-Adobe-3.0
-%%Creator: Applixware
+%%Creator: FFMPEG::Effects
 %%Pages: 1
 %%DocumentNeededResources: font Helvetica Times-Roman
 %%EndComments
@@ -2018,6 +1589,7 @@ ifelse
 save /AXPageSave exch def
 DOSETUP
 $hscale DOLANDSCAPE
+$hscale UNDOLANDSCAPE
 %%EndPageSetup
 
 0.9999 0.9960 0.9999 0.0000 SET_CMYK
@@ -2041,7 +1613,13 @@ open (TITLEFILE,  '>', "Title.ps") or  die $!;
 print(TITLEFILE $titleframe);
 close (TITLEFILE);
 
-return($titleframe); 
+	if ($self->{'debug'} != 0)
+	{
+		print $pngdata;
+	}
+
+
+	return($titleframe); 
 
 }
 
@@ -2052,47 +1630,26 @@ Piero Bugoni, C<< <PBugoni at cpan.org> >>
 
 =head1 BUGS
 
-Please report any bugs or feature requests to C<bug-ffmpeg-effects at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=FFMPEG-Effects>.  I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
+Please Report Problems Using This Module To The ffmpeg-user 
+mailing list. That is The Only Place That Will Be Checked.
 
 
 =head1 SUPPORT
 
-You can find documentation for this module with the perldoc command.
+You can find documentation for this module with the UNIX `man` Command: 
 
-    perldoc FFMPEG::Effects
+    man FFMPEG::Effects
 
-
-You can also look for information at:
-
-=over 4
-
-=item * RT: CPAN's request tracker
-
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=FFMPEG-Effects>
-
-=item * AnnoCPAN: Annotated CPAN documentation
-
-L<http://annocpan.org/dist/FFMPEG-Effects>
-
-=item * CPAN Ratings
-
-L<http://cpanratings.perl.org/d/FFMPEG-Effects>
-
-=item * Search CPAN
-
-L<http://search.cpan.org/dist/FFMPEG-Effects/>
-
-=back
-
+Otherwise, Search The ffmpeg-user mailing List for References to
+This Module.
 
 =head1 ACKNOWLEDGEMENTS
 
+The FFMPEG Development Crew.
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2011 Piero Bugoni.
+Copyright 2011-Present Piero Bugoni.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
