@@ -31,7 +31,7 @@ use FFMPEG::Effects;
 			'color=cyan', 
 			'opacity=70', 
 			'fadeinframes=90', 
-			'holdframes=31', 
+			'holdframes=31' ); 
 
 	$effect->TitleSplash('size=cif',
 			'framerate=30', 
@@ -51,12 +51,13 @@ use FFMPEG::Effects;
 			'color=cyan', 
 			'opacity=70', 
 			'fadeoutframes=56', 
-			'holdframes=31', 
+			'holdframes=31' ); 
 
 
 =head1 USAGE
 
 The Methods Shown Above Are Shown With Their Relevant Arguments.
+
 They Can Be Called With No Arguments And Will Attempt To Produce Useful Output.
 
 Use This Module As In The Examples Above, Sending A List Of Quoted Arguments
@@ -370,12 +371,6 @@ sub Help
 			}
 		}
 	}
-
-	while( my ($key, $value ) = each(@inputargs) ) 
-	{
- 		print($value, "\n");
- 		print($helphash->{$key}, "\n");
-	}	
 
 }
 
